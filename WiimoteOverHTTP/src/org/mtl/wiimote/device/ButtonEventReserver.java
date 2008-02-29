@@ -9,7 +9,7 @@ import java.util.TimerTask;
  * @author nemoto
  * @version 0.1
  */
-public class ButtonEventList{
+public class ButtonEventReserver{
 
 	/** ボタンイベント保持リスト */
 	ArrayList<Object> buttonEvent = new ArrayList<Object>();

@@ -29,7 +29,7 @@ public class WiimoteManager {
 	/** 接続済みWiiリモコン保持Map */
 	private static HashMap<Integer, WiiRemote> wiimoteMap = new HashMap<Integer, WiiRemote>();
 	/** ボタン押下状態保持Map */
-	private static HashMap<Integer, ButtonEventList> buttonEventMap = new HashMap<Integer, ButtonEventList>();
+	private static HashMap<Integer, ButtonEventReserver> buttonEventMap = new HashMap<Integer, ButtonEventReserver>();
 	/** LED点灯パターン */
 	private final static boolean[][] LED_PATTERN = {
 		{true,	false,	false,	false},
@@ -76,7 +76,7 @@ public class WiimoteManager {
 				// 接続済Wiiリモコンを追加
 				wiimoteMap.put(wNo, wiiremote);
 				// Wiiリモコンボタンイベント追加
-				buttonEventMap.put(wNo, new ButtonEventList());
+				buttonEventMap.put(wNo, new ButtonEventReserver());
 				return true;
 			}
 			return false;
@@ -203,7 +203,7 @@ public class WiimoteManager {
 		}
 
 		public void buttonInputReceived(WRButtonEvent arg0) {
-			ButtonEventList bel = buttonEventMap.get(this.wiimoteNo);
+			ButtonEventReserver bel = buttonEventMap.get(this.wiimoteNo);
 			if(arg0.isPressed(WRButtonEvent.A)){
 				bel.add("A");
 				System.out.println("A");
