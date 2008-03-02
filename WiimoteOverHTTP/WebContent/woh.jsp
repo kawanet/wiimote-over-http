@@ -6,6 +6,13 @@
 <meta http-equiv="Content-Type"	content="text/html; charset=UTF-8" />
 <title>WiimoteOverHTML</title>
 <script type="text/javascript" src="js/wiimote.js"></script>
+<script type="text/javascript" >
+  function call(value) {
+    alert(value);
+  }
+</script>
+<script type="text/javascript" src="http://localhost:8080/execute.json?callback=call"></script>
+
 
 </head>
 <body>
@@ -20,7 +27,7 @@
 				<option value="isConnected">Wiiリモコン接続状況取得</option>
 				<option value="vibrateFor">バイブレーション操作</option>
 				<option value="isPressed">ボタン押下状況取得</option>
-				<option value="PositionInfo">傾きセンサー？状況取得</option>
+				<option value="PositionInfo" disabled>傾きセンサー？状況取得</option>
 				<option value="setLEDLights">LED点灯・消灯操作</option>
 			</select>
 		</td>
@@ -66,7 +73,17 @@
 		<td>LIGHT</td>
 		<td><input type="text" name="light" value="1,0,1,0"/>※カンマ区切り(1:ON 0:OFF)</td>
 	</tr>
+	<tr>
+		<td>RESPONSE</td>
+		<td>
+			<select name="responseType" onchange="changeParam();">
+				<option value="XML">XML</option>
+				<option value="JSON">JSON</option>
+			</select>
+		</td>
+	</tr>
 </table>
+<br>
 <input type="submit" name="送信" />
 </center>
 </form>

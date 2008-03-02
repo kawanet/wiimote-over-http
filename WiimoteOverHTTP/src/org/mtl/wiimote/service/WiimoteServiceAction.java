@@ -18,6 +18,8 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import net.arnx.jsonic.JSON;
+
 import org.apache.commons.validator.GenericValidator;
 import org.mtl.wiimote.device.WiimoteManager;
 import org.mtl.wiimote.exception.WiimoteNotConnectException;
@@ -56,6 +58,7 @@ public class WiimoteServiceAction extends HttpServlet{
 		String time 	= request.getParameter(Constant.TIME);
 		String button	= request.getParameter(Constant.BUTTON);
 		String light	= request.getParameter(Constant.LIGHT);
+		String resType 	= request.getParameter(Constant.RESPONSE_TYPE);
 
 		Element responseNode = null;
 		try {
@@ -97,8 +100,8 @@ public class WiimoteServiceAction extends HttpServlet{
 			response.setStatus(Constant.STATUS_OK);
 			// レスポンスのライターを取得
 			PrintWriter pw = response.getWriter();
-			// XMLを出力
-			this.writeXML(pw);
+			// 結果を出力
+			this.write(pw, resType);
 			pw.flush();
 			pw.close();
 		}
@@ -298,17 +301,30 @@ public class WiimoteServiceAction extends HttpServlet{
 		return node;
 	}
 	
-	private void writeXML(Writer writer){
+	/**
+	 * 出力を行う
+	 * @param writer 
+	 * @param type
+	 */
+	private void write(Writer writer, String type){
 		try{
-			TransformerFactory transFactory = TransformerFactory.newInstance();
-			Transformer transformer = transFactory.newTransformer();
-
-			DOMSource source = new DOMSource(document);
-			StreamResult result = new StreamResult(writer);
-			transformer.transform(source, result);
+			if(type == null || type.equals(Constant.RESPONSE_XML)){
+				TransformerFactory transFactory = TransformerFactory.newInstance();
+				Transformer transformer = transFactory.newTransformer();
+	
+				DOMSource source = new DOMSource(document);
+				StreamResult result = new StreamResult(writer);
+				transformer.transform(source, result);				
+			}else if(type.equals(Constant.RESPONSE_JSON)){
+				writer.write(JSON.encode(document));
+			}else{
+				writer.write("illigal responseType");
+			}
 		}catch(TransformerConfigurationException e){
 			e.printStackTrace();
 		}catch(TransformerException e){
+			e.printStackTrace();
+		}catch(IOException e){
 			e.printStackTrace();
 		}
 	}

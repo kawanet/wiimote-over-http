@@ -3,11 +3,12 @@ package org.mtl.wiimote.service;
 public class Constant {
 
 	/** パラメータKEY */
-	public static final String METHOD 	= "method";
-	public static final String WIIMOTE 	= "wiimote";
-	public static final String LIGHT 		= "light";
-	public static final String TIME 		= "time";
-	public static final String BUTTON 	= "button";
+	public static final String METHOD 		= "method";
+	public static final String WIIMOTE 		= "wiimote";
+	public static final String LIGHT 			= "light";
+	public static final String TIME 			= "time";
+	public static final String BUTTON 		= "button";
+	public static final String RESPONSE_TYPE 	= "responseType";
 	
 	/** パラメータ(METHOD) VALUE */
 	public static final String FIND_REMOTE 		= "findRemote";
@@ -36,4 +37,9 @@ public class Constant {
 	public static final String NODE_X_POS 			= "xPos";
 	public static final String NODE_Y_POS 			= "yPos";
 	public static final String NODE_Z_POS 			= "zPos";
+	
+	/** レスポンスタイプ */
+	public static final String RESPONSE_XML 	= "XML";
+	public static final String RESPONSE_JSON 	= "JSON";
+	
 }
