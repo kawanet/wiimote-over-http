@@ -4,27 +4,29 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import wiiremotej.event.WRButtonEvent;
+
 /**
  * ボタンイベント保持クラス
- * @author nemoto
+ * @author nemoto.hrs
  * @version 0.1
  */
 public class ButtonEventReserver{
 
 	/** ボタンイベント保持リスト */
-	ArrayList<Object> buttonEvent = new ArrayList<Object>();
+	private ArrayList<Object> buttonEventList = new ArrayList<Object>();
 	/** ボタンイベント削除用タイマー */
-	Timer timer = new Timer();
+	private Timer timer = new Timer();
 
 	/**
-	 * 押下されたボタン情報を追加する
-	 * @param o ボタン情報
+	 * 押下されたボタンイベントを追加する
+	 * @param o ボタンイベント
 	 * @return
 	 */
 	public boolean add(Object o) {
 		timer.purge();
 		timer.schedule(new EventClearTask(), 1000);
-		return buttonEvent.add(o);
+		return buttonEventList.add(o);
 	}
 
 	/**
@@ -34,16 +36,23 @@ public class ButtonEventReserver{
 	 */
 	public void add(int index, Object element) {
 		timer.purge();
-		timer.schedule(new EventClearTask(), 300);
-		buttonEvent.add(index, element);		
+		timer.schedule(new EventClearTask(), 1000);
+		buttonEventList.add(index, element);		
 	}
 
+	public WRButtonEvent get(int index){
+		if(this.buttonEventList.size() > index){
+			return (WRButtonEvent)this.buttonEventList.get(index);
+		}
+		return null;
+	}
+	
 	public boolean contains(Object o) {
-		return buttonEvent.contains(o);
+		return buttonEventList.contains(o);
 	}
 
 	public Object[] toArray() {
-		return buttonEvent.toArray();
+		return buttonEventList.toArray();
 	}
 
 	public void cancel() {
@@ -52,12 +61,14 @@ public class ButtonEventReserver{
 	
 	/**
 	 * ボタンイベント内容削除インナークラス
-	 * @author nemoto
+	 * @author nemoto.hrs
 	 * @version 0.1
 	 */
 	private class EventClearTask extends TimerTask{
 		public void run() {
-			buttonEvent.clear();
+			if(buttonEventList.size() > 0){
+				buttonEventList.remove(0);
+			}
 		}
 	}
 }

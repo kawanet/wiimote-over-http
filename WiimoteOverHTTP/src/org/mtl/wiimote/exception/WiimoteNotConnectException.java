@@ -2,7 +2,7 @@ package org.mtl.wiimote.exception;
 
 /**
  * WiiƒŠƒ‚ƒRƒ“‚ªÚ‘±‚³‚ê‚Ä‚¢‚È‚¢ê‡‚Éthrow‚³‚ê‚éException
- * @author nemoto
+ * @author nemoto.hrs
  * @version 0.1
  */
 public class WiimoteNotConnectException extends Exception {
