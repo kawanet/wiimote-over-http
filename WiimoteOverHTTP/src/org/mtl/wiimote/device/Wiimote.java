@@ -91,12 +91,12 @@ public class Wiimote{
 			wiiremote = WiiRemoteJ.findRemote();
 			if(wiiremote != null && wiiremote.isConnected()){
 				System.out.println("=== CONNECT === wiimoteNo:"+this.wiimoteNo);
-				// LEDを点灯させる
-				wiiremote.setLEDLights(this.defaultLEDPattern);
-				// イベントのリスナを設定
-				wiiremote.addWiiRemoteListener(new WiimoteListener());			
 				// Wiiリモコンボタンイベント追加
 				buttonInfo = new ButtonEventReserver();
+				// イベントのリスナを設定
+				wiiremote.addWiiRemoteListener(new WiimoteListener());
+				// LEDを点灯させる
+				wiiremote.setLEDLights(this.defaultLEDPattern);
 				return true;
 			}
 		}catch(Exception e){

@@ -25,7 +25,7 @@ public class ButtonEventReserver{
 	 */
 	public boolean add(Object o) {
 		timer.purge();
-		timer.schedule(new EventClearTask(), 1000);
+		timer.schedule(new EventClearTask(), 100000);
 		return buttonEventList.add(o);
 	}
 
@@ -36,7 +36,7 @@ public class ButtonEventReserver{
 	 */
 	public void add(int index, Object element) {
 		timer.purge();
-		timer.schedule(new EventClearTask(), 1000);
+		timer.schedule(new EventClearTask(), 100000);
 		buttonEventList.add(index, element);		
 	}
 

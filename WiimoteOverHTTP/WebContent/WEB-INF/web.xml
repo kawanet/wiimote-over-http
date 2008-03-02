@@ -10,7 +10,7 @@
     <url-pattern>/execute/*</url-pattern>
   </servlet-mapping>
 	<welcome-file-list>
-		<welcome-file>woh.htm</welcome-file>
+		<welcome-file>woh.html</welcome-file>
 		<welcome-file>woh.jsp</welcome-file>
 	</welcome-file-list>
 </web-app>

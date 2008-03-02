@@ -1,9 +1,8 @@
 package org.mtl.wiimote.service;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Writer;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -11,7 +10,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
@@ -35,6 +37,8 @@ public class WiimoteServiceAction extends HttpServlet{
 	
 	/** Wiiリモコン管理クラス*/
 	private static WiimoteManager manager = null;
+	/** XMLドキュメント */
+	private Document document = null;
 
 	@Override
 	protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{
@@ -53,30 +57,48 @@ public class WiimoteServiceAction extends HttpServlet{
 		String button	= request.getParameter(Constant.BUTTON);
 		String light	= request.getParameter(Constant.LIGHT);
 
+		Element responseNode = null;
 		try {
+			// response ノード作成
+			responseNode = this.createRootNode(Constant.NODE_RESPONSE);
+			// method ノード作成
+			responseNode.appendChild(this.createNode(Constant.NODE_METHOD, method));
+
+			// Wiiリモコンに対する処理の実行
 			if(!GenericValidator.isBlankOrNull(method)){
 				if(method.equals(Constant.FIND_REMOTE)){
-					returnStatus = this.findRemote();
+					this.findRemote(responseNode);
 				}else if(method.equals(Constant.IS_CONNECTED)){
-					returnStatus = this.isConnected(wiimote);
+					this.isConnected(responseNode, wiimote);
 				}else if(method.equals(Constant.POSITION_INFO)){
-					returnStatus = this.getPositionInfo(wiimote);
+					this.getPositionInfo(responseNode, wiimote);
 				}else if(method.equals(Constant.VIBRATE_FOR)){
-					returnStatus = this.vibrateFor(wiimote, time);
+					this.vibrateFor(responseNode, wiimote, time);
 				}else if(method.equals(Constant.IS_PRESSED)){
-					returnStatus = this.isPressed(wiimote, button);
+					this.isPressed(responseNode, wiimote, button);
 				}else if(method.equals(Constant.SET_LED_LIGHTS)){
-					returnStatus = this.setLEDLights(wiimote, light);
+					this.setLEDLights(responseNode, wiimote, light);
 				}else{
+					// status ノード追加
 					returnStatus = Constant.STATUS_METHOD_NOT_FOUND;
+					responseNode.appendChild(this.createNode(Constant.NODE_STATUS, returnStatus.toString()));
 				}
 			}else{
+				// status ノード追加
 				returnStatus = Constant.STATUS_METHOD_NOT_FOUND;
+				responseNode.appendChild(this.createNode(Constant.NODE_STATUS, returnStatus.toString()));
 			}
-			response.sendRedirect("./");
+		}catch(Exception e){
+			// status ノード追加
+			returnStatus = Constant.STATUS_NG;
+			responseNode.appendChild(this.createNode(Constant.NODE_STATUS, returnStatus.toString()));
+			e.printStackTrace();
 		}finally{
+			response.setStatus(Constant.STATUS_OK);
 			// レスポンスのライターを取得
 			PrintWriter pw = response.getWriter();
+			// XMLを出力
+			this.writeXML(pw);
 			pw.flush();
 			pw.close();
 		}
@@ -84,78 +106,104 @@ public class WiimoteServiceAction extends HttpServlet{
 	
 	/**
 	 * Wiiリモコン探索
-	 * @return ステータス
+	 * @param rNode XML基点ノード
 	 */
-	private int findRemote(){
+	private void findRemote(Element rNode){
+		Integer st = 0;
 		try{
 			manager.findWiimote();
+			st = Constant.STATUS_OK;
 		}catch(Exception e){
-			return Constant.STATUS_NG;
+			st = Constant.STATUS_NG;
 		}
-		return Constant.STATUS_OK;
+		// status ノード追加
+		rNode.appendChild(this.createNode(Constant.NODE_STATUS, st.toString()));
 	}
 
 	/**
 	 * Wiiリモコン接続状況取得
+	 * @param rNode XML基点ノード
 	 * @param wiimote WiiリモコンNo.
-	 * @return ステータス
 	 */
-	private int isConnected(String wiimote){
+	private void isConnected(Element rNode, String wiimote){
+		Integer st = 0;
+		boolean bol = false;
 		try{
 			if(wiimote != null && GenericValidator.isInt(wiimote)){
-				manager.isConnected(Integer.parseInt(wiimote));
-				return Constant.STATUS_OK;
+				bol = manager.isConnected(Integer.parseInt(wiimote));
+				st = Constant.STATUS_OK;
+			}else{
+				st = Constant.STATUS_PARAM_NG;
 			}
 		}catch(WiimoteNotFoundException e){
-			return Constant.STATUS_WIIMOTE_NOT_FOUND;
+			st = Constant.STATUS_WIIMOTE_NOT_FOUND;
 		}catch(Exception e){
-			return Constant.STATUS_NG;
+			st = Constant.STATUS_NG;
 		}
-		return Constant.STATUS_PARAM_NG;
+		// status ノード追加
+		rNode.appendChild(this.createNode(Constant.NODE_STATUS, st.toString()));
+		// data ノード追加
+		Element data = this.createNode(Constant.NODE_DATA, null);
+		data.appendChild(this.createNode(Constant.NODE_BOOL, (bol?"1":"0")));
+		rNode.appendChild(data);
 	}
 	
 	/**
+	 * TODO 
 	 * Wiiリモコン位置情報取得
+	 * @param rNode XML基点ノード
 	 * @param wiimote WiiリモコンNo.
-	 * @return ステータス
 	 */
-	private int getPositionInfo(String wiimote){
+	private void getPositionInfo(Element rNode, String wiimote){
+		Integer st = 0;
 		try {
 			if(wiimote != null && GenericValidator.isInt(wiimote)){
+				// TODO 結果を取得
 				manager.getPositionInfo(Integer.parseInt(wiimote));
-				return Constant.STATUS_OK;
+				st = Constant.STATUS_OK;
+			}else{
+				st = Constant.STATUS_PARAM_NG;
 			}
 		}catch(WiimoteNotFoundException e){
-			return Constant.STATUS_WIIMOTE_NOT_FOUND;
+			st = Constant.STATUS_WIIMOTE_NOT_FOUND;
 		}catch(WiimoteNotConnectException e){
-			return Constant.STATUS_WIIMOTE_NOT_FOUND;
+			st = Constant.STATUS_WIIMOTE_NOT_FOUND;
 		}catch(Exception e){
-			return Constant.STATUS_NG;
+			st = Constant.STATUS_NG;
 		}
-		return Constant.STATUS_PARAM_NG;
+		// status ノード追加
+		rNode.appendChild(this.createNode(Constant.NODE_STATUS, st.toString()));
+		// data ノード追加
+		Element data = this.createNode(Constant.NODE_DATA, null);
+		// TODO 結果を追加
+		rNode.appendChild(data);
 	}
 	
 	/**
 	 * Wiiリモコンバイブレーション操作
+	 * @param rNode XML基点ノード
 	 * @param wiimote WiiリモコンNo.
 	 * @param time バイブレーション時間
-	 * @return ステータス
 	 */
-	private int vibrateFor(String wiimote, String time){
+	private void vibrateFor(Element rNode, String wiimote, String time){
+		Integer st = 0;
 		try {
 			if(wiimote != null && GenericValidator.isInt(wiimote) && 
 					time != null && GenericValidator.isLong(time)){
 				manager.vibrateFor(Integer.parseInt(wiimote), Long.parseLong(time));
-				return Constant.STATUS_OK;
+				st = Constant.STATUS_OK;
+			}else{
+				st = Constant.STATUS_PARAM_NG;				
 			}
 		}catch(WiimoteNotFoundException e){
-			return Constant.STATUS_WIIMOTE_NOT_FOUND;
+			st = Constant.STATUS_WIIMOTE_NOT_FOUND;
 		}catch(WiimoteNotConnectException e){
-			return Constant.STATUS_WIIMOTE_NOT_FOUND;
+			st = Constant.STATUS_WIIMOTE_NOT_FOUND;
 		}catch(Exception e){
-			return Constant.STATUS_NG;
+			st = Constant.STATUS_NG;
 		}
-		return Constant.STATUS_PARAM_NG;
+		// status ノード追加
+		rNode.appendChild(this.createNode(Constant.NODE_STATUS, st.toString()));
 	}
 	
 	/**
@@ -164,21 +212,30 @@ public class WiimoteServiceAction extends HttpServlet{
 	 * @param button ボタン名
 	 * @return ステータス
 	 */
-	private int isPressed(String wiimote, String button){
+	private void isPressed(Element rNode, String wiimote, String button){
+		Integer st = 0;
+		boolean bol = false;
 		try{
 			if(wiimote != null && GenericValidator.isInt(wiimote) && 
 					button != null && button.matches("HOME|MINUS|PLUS|A|B|ONE|TWO|UP|DOWN|LEFT|RIGHT")){
-				manager.isPressed(Integer.parseInt(wiimote), button);
-				return Constant.STATUS_OK;
+				bol = manager.isPressed(Integer.parseInt(wiimote), button);
+				st = Constant.STATUS_OK;
+			}else{
+				st = Constant.STATUS_PARAM_NG;
 			}
 		}catch(WiimoteNotFoundException e){
-			return Constant.STATUS_WIIMOTE_NOT_FOUND;
+			st = Constant.STATUS_WIIMOTE_NOT_FOUND;
 		}catch(WiimoteNotConnectException e){
-			return Constant.STATUS_WIIMOTE_NOT_FOUND;
+			st = Constant.STATUS_WIIMOTE_NOT_FOUND;
 		}catch(Exception e){
-			return Constant.STATUS_NG;
+			st = Constant.STATUS_NG;
 		}
-		return Constant.STATUS_PARAM_NG;
+		// status ノード追加
+		rNode.appendChild(this.createNode(Constant.NODE_STATUS, st.toString()));
+		// data ノード追加
+		Element data = this.createNode(Constant.NODE_DATA, null);
+		data.appendChild(this.createNode(Constant.NODE_BOOL, (bol?"1":"0")));
+		rNode.appendChild(data);
 	}
 	
 	/**
@@ -187,7 +244,8 @@ public class WiimoteServiceAction extends HttpServlet{
 	 * @param light LED点灯パターン
 	 * @return ステータス
 	 */
-	private int setLEDLights(String wiimote, String light){
+	private void setLEDLights(Element rNode, String wiimote, String light){
+		Integer st = 0;
 		try{
 			if(wiimote != null && GenericValidator.isInt(wiimote) && 
 					light != null && light.matches("^[01],[01],[01],[01]$")){
@@ -196,51 +254,62 @@ public class WiimoteServiceAction extends HttpServlet{
 						(sptn[0].equals("1")?true:false), (sptn[1].equals("1")?true:false),
 						(sptn[2].equals("1")?true:false), (sptn[3].equals("1")?true:false),};
 				manager.setLEDLights(Integer.parseInt(wiimote), pattern);
-				return Constant.STATUS_OK;
+				st = Constant.STATUS_OK;
+			}else{
+				st = Constant.STATUS_PARAM_NG;
 			}
 		}catch(WiimoteNotFoundException e){
-			return Constant.STATUS_WIIMOTE_NOT_FOUND;
+			st = Constant.STATUS_WIIMOTE_NOT_FOUND;
 		}catch(WiimoteNotConnectException e){
-			return Constant.STATUS_WIIMOTE_NOT_FOUND;
+			st = Constant.STATUS_WIIMOTE_NOT_FOUND;
 		}catch(Exception e){
-			return Constant.STATUS_NG;
+			st = Constant.STATUS_NG;
 		}
-		return Constant.STATUS_PARAM_NG;
+		// status ノード追加
+		rNode.appendChild(this.createNode(Constant.NODE_STATUS, st.toString()));
 	}
 	
-	private void createXML(){
+	/**
+	 * 基点ノードを作成
+	 * @param docName 基点ノード名
+	 * @return ノードオブジェクト
+	 * @throws ParserConfigurationException 
+	 * @throws ParserConfigurationException
+	 */
+	private Element createRootNode(String docName) throws ParserConfigurationException{
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder builder = factory.newDocumentBuilder();
+		DOMImplementation domImpl = builder.getDOMImplementation();
+		document = domImpl.createDocument("",docName, null);
+		return document.getDocumentElement();
+	}
+	
+	/**
+	 * ノードを作成
+	 * @param nodeName ノード名
+	 * @param nodeValue ノードの値
+	 * @return ノードオブジェクト
+	 */
+	private Element createNode(String nodeName, String nodeValue){
+		Element node = document.createElement(nodeName);
+		if(nodeValue != null){
+			node.appendChild(document.createTextNode(nodeValue));
+		}
+		return node;
+	}
+	
+	private void writeXML(Writer writer){
 		try{
-			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-			DocumentBuilder builder = factory.newDocumentBuilder();
-	
-			DOMImplementation domImpl = builder.getDOMImplementation();
-			Document document = domImpl.createDocument("","response",null);
-			Element response = document.getDocumentElement();
-			
-			// status ノード作成
-			Element status = document.createElement("status");
-			status.appendChild(document.createTextNode("---"));
-			response.appendChild(status);
-			
-			// method ノード作成
-			Element method = document.createElement("method");
-			status.appendChild(document.createTextNode("---"));
-			response.appendChild(method);
-			
-			
-
-	
 			TransformerFactory transFactory = TransformerFactory.newInstance();
 			Transformer transformer = transFactory.newTransformer();
-	
+
 			DOMSource source = new DOMSource(document);
-			File newXML = new File("newXML.xml");
-			FileOutputStream os = new FileOutputStream(newXML);
-			StreamResult result = new StreamResult(os);
+			StreamResult result = new StreamResult(writer);
 			transformer.transform(source, result);
-		}catch(Exception e){
-			
+		}catch(TransformerConfigurationException e){
+			e.printStackTrace();
+		}catch(TransformerException e){
+			e.printStackTrace();
 		}
-	
 	}
 }

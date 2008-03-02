@@ -23,4 +23,17 @@ public class Constant {
 	public static final Integer STATUS_PARAM_NG 			= 400;
 	public static final Integer STATUS_WIIMOTE_NOT_FOUND 	= 404;
 	public static final Integer STATUS_METHOD_NOT_FOUND 	= 501;
+
+	/** XMLÉmÅ[Éh */
+	public static final String NODE_RESPONSE 			= "response";
+	public static final String NODE_STATUS 			= "status";
+	public static final String NODE_METHOD 			= "method";
+	public static final String NODE_DATA 				= "data";
+	public static final String NODE_BOOL 				= "bool";
+	public static final String NODE_IS_YAW_ALLOWED 	= "isYawAllowed";
+	public static final String NODE_PITCH 			= "pitch";
+	public static final String NODE_ROLL 				= "roll";
+	public static final String NODE_X_POS 			= "xPos";
+	public static final String NODE_Y_POS 			= "yPos";
+	public static final String NODE_Z_POS 			= "zPos";
 }

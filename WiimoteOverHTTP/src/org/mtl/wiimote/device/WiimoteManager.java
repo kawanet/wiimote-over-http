@@ -2,6 +2,7 @@ package org.mtl.wiimote.device;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import org.mtl.wiimote.exception.WiimoteNotConnectException;
 import org.mtl.wiimote.exception.WiimoteNotFoundException;
