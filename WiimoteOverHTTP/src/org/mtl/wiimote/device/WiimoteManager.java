@@ -2,7 +2,7 @@ package org.mtl.wiimote.device;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.Map;
 
 import org.mtl.wiimote.exception.WiimoteNotConnectException;
 import org.mtl.wiimote.exception.WiimoteNotFoundException;
@@ -143,12 +143,20 @@ public class WiimoteManager {
 		wiim.setLEDLights(pattern);
 	}
 
-	// TODO 位置情報を返す
-	public void getPositionInfo(int wiimoteNo) 
+	/**
+	 * 指定されたWiiリモコンの位置情報を返す
+	 * @param wiimoteNo WiiリモコンNo.
+	 * @return 位置情報MAP
+	 * @throws WiimoteNotFoundException Wiiリモコンが存在しない(不正なWiiリモコンNo.)
+	 * @throws WiimoteNotConnectException Wiiリモコンが未接続
+	 */
+	public Map<Integer, Double> getPositionInfo(int wiimoteNo) 
 	throws WiimoteNotFoundException, WiimoteNotConnectException{
 		if(!wiimoteMap.containsKey(wiimoteNo)){
 			throw new WiimoteNotFoundException();
 		}
+		Wiimote wiim = wiimoteMap.get(wiimoteNo);
+		return wiim.getPositionInfo();
 	}
 	
 	/**

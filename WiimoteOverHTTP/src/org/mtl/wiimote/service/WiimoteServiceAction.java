@@ -3,6 +3,7 @@ package org.mtl.wiimote.service;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -21,6 +22,7 @@ import javax.xml.transform.stream.StreamResult;
 import net.arnx.jsonic.JSON;
 
 import org.apache.commons.validator.GenericValidator;
+import org.mtl.wiimote.device.Wiimote;
 import org.mtl.wiimote.device.WiimoteManager;
 import org.mtl.wiimote.exception.WiimoteNotConnectException;
 import org.mtl.wiimote.exception.WiimoteNotFoundException;
@@ -159,10 +161,10 @@ public class WiimoteServiceAction extends HttpServlet{
 	 */
 	private void getPositionInfo(Element rNode, String wiimote){
 		Integer st = 0;
+		Map<Integer, Double> posInfo = null;
 		try {
 			if(wiimote != null && GenericValidator.isInt(wiimote)){
-				// TODO åãâ ÇéÊìæ
-				manager.getPositionInfo(Integer.parseInt(wiimote));
+				posInfo = manager.getPositionInfo(Integer.parseInt(wiimote));
 				st = Constant.STATUS_OK;
 			}else{
 				st = Constant.STATUS_PARAM_NG;
@@ -178,7 +180,11 @@ public class WiimoteServiceAction extends HttpServlet{
 		rNode.appendChild(this.createNode(Constant.NODE_STATUS, st.toString()));
 		// data ÉmÅ[Éhí«â¡
 		Element data = this.createNode(Constant.NODE_DATA, null);
-		// TODO åãâ Çí«â¡
+		data.appendChild(this.createNode(Constant.NODE_X_POS, posInfo.get(Wiimote.POS_X).toString()));
+		data.appendChild(this.createNode(Constant.NODE_Y_POS, posInfo.get(Wiimote.POS_Y).toString()));
+		data.appendChild(this.createNode(Constant.NODE_Z_POS, posInfo.get(Wiimote.POS_Z).toString()));
+		data.appendChild(this.createNode(Constant.NODE_PITCH, posInfo.get(Wiimote.POS_PITCH).toString()));
+		data.appendChild(this.createNode(Constant.NODE_ROLL,  posInfo.get(Wiimote.POS_ROLL).toString()));
 		rNode.appendChild(data);
 	}
 	

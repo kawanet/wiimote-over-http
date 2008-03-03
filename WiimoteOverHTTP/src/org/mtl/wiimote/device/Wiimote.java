@@ -2,6 +2,7 @@ package org.mtl.wiimote.device;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.mtl.wiimote.exception.WiimoteNotConnectException;
 
@@ -30,6 +31,8 @@ public class Wiimote{
 	private boolean[] defaultLEDPattern = null;
 	/** ボタン押下状態保持MAP */
 	private HashMap<Integer, Boolean> buttonMap = new HashMap<Integer, Boolean>();
+	/** 位置情報保持MAP */
+	private HashMap<Integer, Double> positionMap = new HashMap<Integer, Double>();
 	/** デフォルトLED点灯パターンリスト */
 	private static final boolean[][] LED_PATTERN = {
 		{true,	false,	false,	false},
@@ -58,6 +61,13 @@ public class Wiimote{
 	public static final int KEY_LEFT 		= WRButtonEvent.LEFT;
 	public static final int KEY_RIGHT 	= WRButtonEvent.RIGHT;
 	
+	/* Wiiリモコン位置 */
+	public static final int POS_X 		= 100;
+	public static final int POS_Y 		= 110;
+	public static final int POS_Z 		= 120;
+	public static final int POS_PITCH		= 130;
+	public static final int POS_ROLL		= 140;
+		
 	/**
 	 * コンストラクタ
 	 */
@@ -76,13 +86,14 @@ public class Wiimote{
 		}else{
 			this.defaultLEDPattern = LED_PATTERN[NUM_OTHER];
 		}
-		this.initButtonMap();
+		this.initInfoMap();
 	}
 	
 	/**
-	 * ボタン押下状態初期化
+	 * 状態保持MAP初期化
 	 */
-	private void initButtonMap(){
+	private void initInfoMap(){
+		// ボタン情報
 		buttonMap.put(KEY_A, 	 false);
 		buttonMap.put(KEY_B, 	 false);
 		buttonMap.put(KEY_ONE, 	 false);
@@ -94,6 +105,12 @@ public class Wiimote{
 		buttonMap.put(KEY_DOWN,  false);
 		buttonMap.put(KEY_LEFT,  false);
 		buttonMap.put(KEY_RIGHT, false);
+		// 位置情報
+		positionMap.put(POS_X, 		0.0);
+		positionMap.put(POS_Y, 		0.0);
+		positionMap.put(POS_Z, 		0.0);
+		positionMap.put(POS_PITCH, 	0.0);
+		positionMap.put(POS_ROLL, 	0.0);
 	}
 	
 	/**
@@ -112,6 +129,7 @@ public class Wiimote{
 				System.out.println("=== CONNECT === wiimoteNo:"+this.wiimoteNo);
 				// イベントのリスナを設定
 				wiiremote.addWiiRemoteListener(new WiimoteListener());
+				wiiremote.setAccelerometerEnabled(true);
 				// LEDを点灯させる
 				wiiremote.setLEDLights(this.defaultLEDPattern);
 				return true;
@@ -128,7 +146,7 @@ public class Wiimote{
 	 */
 	public void disconnect(){
 		if(wiiremote != null && wiiremote.isConnected()){
-			this.initButtonMap();
+			this.initInfoMap();
 			wiiremote.disconnect();
 		}
 	}
@@ -189,6 +207,48 @@ public class Wiimote{
 	}
 
 	/**
+	 * Wiiリモコンのボタン情報を返す
+	 * @return ボタン情報MAP
+	 * @throws WiimoteNotConnectException Wiiリモコンが未接続
+	 */
+	@SuppressWarnings("unchecked")
+	public Map<Integer, Boolean> getButtonInfo() throws WiimoteNotConnectException{
+		if(wiiremote != null && wiiremote.isConnected()){
+			return (Map)buttonMap.clone();
+		}else{
+			throw new WiimoteNotConnectException();
+		}		
+	}
+
+	/**
+	 * Wiiリモコンの位置情報を返す
+	 * @param pos 座標
+	 * @return 指定された座標位置
+	 * @throws WiimoteNotConnectException Wiiリモコンが未接続
+	 */
+	public double getPosition(int pos) throws WiimoteNotConnectException{ 
+		if(wiiremote != null && wiiremote.isConnected()){
+			return positionMap.get(pos);
+		}else{
+			throw new WiimoteNotConnectException();
+		}		
+	}
+
+	/**
+	 * Wiiリモコンの位置情報を返す
+	 * @return 位置情報MAP
+	 * @throws WiimoteNotConnectException Wiiリモコンが未接続
+	 */
+	@SuppressWarnings("unchecked")
+	public Map<Integer, Double> getPositionInfo() throws WiimoteNotConnectException{
+		if(wiiremote != null && wiiremote.isConnected()){
+			return (Map)positionMap.clone();
+		}else{
+			throw new WiimoteNotConnectException();
+		}		
+	}
+
+	/**
 	 * WiiリモコンNo.を返す
 	 * @return WiiリモコンNo.
 	 */
@@ -229,11 +289,11 @@ public class Wiimote{
 	private class WiimoteListener implements WiiRemoteListener{
 		
 		public void accelerationInputReceived(WRAccelerationEvent arg0) {
-			System.out.println("X    :"+arg0.getXAcceleration());
-			System.out.println("Y    :"+arg0.getYAcceleration());
-			System.out.println("Z    :"+arg0.getZAcceleration());
-			System.out.println("Pitch:"+arg0.getPitch());
-			System.out.println("Roll :"+arg0.getRoll()+"\n");
+			positionMap.put(POS_X, 		arg0.getXAcceleration());
+			positionMap.put(POS_Y, 		arg0.getYAcceleration());
+			positionMap.put(POS_Z, 		arg0.getZAcceleration());
+			positionMap.put(POS_PITCH, 	arg0.getPitch());
+			positionMap.put(POS_ROLL, 	arg0.getRoll());
 		}
 
 		public void buttonInputReceived(WRButtonEvent arg0) {
