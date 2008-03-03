@@ -1,6 +1,7 @@
 package org.mtl.wiimote.device;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 import org.mtl.wiimote.exception.WiimoteNotConnectException;
 
@@ -27,8 +28,8 @@ public class Wiimote{
 	private int wiimoteNo = -1;
 	/** デフォルトLED点灯パターン */
 	private boolean[] defaultLEDPattern = null;
-	/** ボタン押下状態保持クラス */
-	private ButtonEventReserver buttonInfo = null;
+	/** ボタン押下状態保持MAP */
+	private HashMap<Integer, Boolean> buttonMap = new HashMap<Integer, Boolean>();
 	/** デフォルトLED点灯パターンリスト */
 	private static final boolean[][] LED_PATTERN = {
 		{true,	false,	false,	false},
@@ -75,6 +76,24 @@ public class Wiimote{
 		}else{
 			this.defaultLEDPattern = LED_PATTERN[NUM_OTHER];
 		}
+		this.initButtonMap();
+	}
+	
+	/**
+	 * ボタン押下状態初期化
+	 */
+	private void initButtonMap(){
+		buttonMap.put(KEY_A, 	 false);
+		buttonMap.put(KEY_B, 	 false);
+		buttonMap.put(KEY_ONE, 	 false);
+		buttonMap.put(KEY_TWO, 	 false);
+		buttonMap.put(KEY_PLUS,  false);
+		buttonMap.put(KEY_MINUS, false);
+		buttonMap.put(KEY_HOME,  false);
+		buttonMap.put(KEY_UP, 	 false);
+		buttonMap.put(KEY_DOWN,  false);
+		buttonMap.put(KEY_LEFT,  false);
+		buttonMap.put(KEY_RIGHT, false);
 	}
 	
 	/**
@@ -91,8 +110,6 @@ public class Wiimote{
 			wiiremote = WiiRemoteJ.findRemote();
 			if(wiiremote != null && wiiremote.isConnected()){
 				System.out.println("=== CONNECT === wiimoteNo:"+this.wiimoteNo);
-				// Wiiリモコンボタンイベント追加
-				buttonInfo = new ButtonEventReserver();
 				// イベントのリスナを設定
 				wiiremote.addWiiRemoteListener(new WiimoteListener());
 				// LEDを点灯させる
@@ -111,7 +128,7 @@ public class Wiimote{
 	 */
 	public void disconnect(){
 		if(wiiremote != null && wiiremote.isConnected()){
-			buttonInfo.cancel();
+			this.initButtonMap();
 			wiiremote.disconnect();
 		}
 	}
@@ -165,11 +182,7 @@ public class Wiimote{
 	 */
 	public boolean isPressed(int key) throws WiimoteNotConnectException{ 
 		if(wiiremote != null && wiiremote.isConnected()){
-			WRButtonEvent event = this.buttonInfo.get(0);
-			if(event != null){
-				return event.isPressed(key);
-			}
-			return false;
+			return buttonMap.get(key);
 		}else{
 			throw new WiimoteNotConnectException();
 		}		
@@ -224,7 +237,29 @@ public class Wiimote{
 		}
 
 		public void buttonInputReceived(WRButtonEvent arg0) {
-			buttonInfo.add(arg0);
+			if(arg0.wasPressed(WRButtonEvent.A))		buttonMap.put(KEY_A, 	 true);
+			if(arg0.wasPressed(WRButtonEvent.B))		buttonMap.put(KEY_B, 	 true);
+			if(arg0.wasPressed(WRButtonEvent.ONE))		buttonMap.put(KEY_ONE, 	 true);
+			if(arg0.wasPressed(WRButtonEvent.TWO))		buttonMap.put(KEY_TWO, 	 true);
+			if(arg0.wasPressed(WRButtonEvent.MINUS))	buttonMap.put(KEY_MINUS, true);
+			if(arg0.wasPressed(WRButtonEvent.PLUS))		buttonMap.put(KEY_PLUS,  true);
+			if(arg0.wasPressed(WRButtonEvent.HOME))		buttonMap.put(KEY_HOME,  true);
+			if(arg0.wasPressed(WRButtonEvent.UP))		buttonMap.put(KEY_UP, 	 true);
+			if(arg0.wasPressed(WRButtonEvent.DOWN))		buttonMap.put(KEY_DOWN,  true);
+			if(arg0.wasPressed(WRButtonEvent.LEFT))		buttonMap.put(KEY_LEFT,  true);
+			if(arg0.wasPressed(WRButtonEvent.RIGHT))	buttonMap.put(KEY_RIGHT, true);
+						
+			if(arg0.wasReleased(WRButtonEvent.A))		buttonMap.put(KEY_A, 	 false);
+			if(arg0.wasReleased(WRButtonEvent.B))		buttonMap.put(KEY_B, 	 false);
+			if(arg0.wasReleased(WRButtonEvent.ONE))		buttonMap.put(KEY_ONE, 	 false);
+			if(arg0.wasReleased(WRButtonEvent.TWO))		buttonMap.put(KEY_TWO, 	 false);
+			if(arg0.wasReleased(WRButtonEvent.MINUS))	buttonMap.put(KEY_MINUS, false);
+			if(arg0.wasReleased(WRButtonEvent.PLUS))	buttonMap.put(KEY_PLUS,  false);
+			if(arg0.wasReleased(WRButtonEvent.HOME))	buttonMap.put(KEY_HOME,  false);
+			if(arg0.wasReleased(WRButtonEvent.UP))		buttonMap.put(KEY_UP, 	 false);
+			if(arg0.wasReleased(WRButtonEvent.DOWN))	buttonMap.put(KEY_DOWN,  false);
+			if(arg0.wasReleased(WRButtonEvent.LEFT))	buttonMap.put(KEY_LEFT,  false);
+			if(arg0.wasReleased(WRButtonEvent.RIGHT))	buttonMap.put(KEY_RIGHT, false);
 		}
 
 		public void IRInputReceived(WRIREvent arg0) {
