@@ -3,6 +3,8 @@ package org.mtl.wiimote.device;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.mtl.wiimote.exception.WiimoteNotConnectException;
 
@@ -35,18 +37,18 @@ public class Wiimote{
 	private HashMap<Integer, Double> positionMap = new HashMap<Integer, Double>();
 	/** デフォルトLED点灯パターンリスト */
 	private static final boolean[][] LED_PATTERN = {
+		{true,	true,	true,	true},
 		{true,	false,	false,	false},
 		{false,	true,	false,	false},
 		{false,	false,	true,	false},
-		{false,	false,	false,	true},
-		{true,	true,	true,	true}
+		{false,	false,	false,	true}
 	};
 	/* WiiリモコンNo */
-	public static final int NUM_ONE 		= 0;
-	public static final int NUM_TWO 		= 1;
-	public static final int NUM_THREE 	= 2;
-	public static final int NUM_FOUR 		= 3;
-	private static final int NUM_OTHER 	= 4;
+	private static final int NUM_OTHER 	= 0;
+	public static final int NUM_ONE 		= 1;
+	public static final int NUM_TWO 		= 2;
+	public static final int NUM_THREE 	= 3;
+	public static final int NUM_FOUR 		= 4;
 	
 	/* WiiリモコンKEY */
 	public static final int KEY_A 		= WRButtonEvent.A;
@@ -148,6 +150,7 @@ public class Wiimote{
 		if(wiiremote != null && wiiremote.isConnected()){
 			this.initInfoMap();
 			wiiremote.disconnect();
+			wiiremote = null;
 		}
 	}
 	
@@ -163,7 +166,7 @@ public class Wiimote{
 	}
 
 	/**
-	 * WiiリモコンのバイブレーションをONにする
+	 * Wiiリモコンのバイブレーションを指定秒数間ONにする
 	 * @throws WiimoteNotConnectException Wiiリモコンが未接続
 	 * @throws IOException 
 	 */
@@ -193,7 +196,25 @@ public class Wiimote{
 	}
 
 	/**
-	 * Wiiリモコンのボタンが押下されたか判断する
+	 * WiiリモコンのLEDを指定されたパターンで指定秒数間点灯させる
+	 * @param pattern 点灯パターン
+	 * @throws WiimoteNotConnectException Wiiリモコンが未接続
+	 * @throws IllegalArgumentException
+	 * @throws IOException
+	 */
+	public void setLEDLightsFor(boolean[] pattern, long milliSec) 
+	throws IllegalArgumentException, IOException, WiimoteNotConnectException{
+		if(wiiremote != null && wiiremote.isConnected()){
+			wiiremote.setLEDLights(pattern);
+			Timer timer = new Timer(true);
+			timer.schedule(new DefaultLEDLightsSetter(), milliSec);
+		}else{
+			throw new WiimoteNotConnectException();
+		}		
+	}
+
+	/**
+	 * Wiiリモコンの指定されたボタンが押下されたか判断する
 	 * @param key ボタン
 	 * @return 押されていた場合はtrue
 	 * @throws WiimoteNotConnectException Wiiリモコンが未接続
@@ -207,7 +228,7 @@ public class Wiimote{
 	}
 
 	/**
-	 * Wiiリモコンのボタン情報を返す
+	 * Wiiリモコンの全てのボタン情報を返す
 	 * @return ボタン情報MAP
 	 * @throws WiimoteNotConnectException Wiiリモコンが未接続
 	 */
@@ -221,7 +242,7 @@ public class Wiimote{
 	}
 
 	/**
-	 * Wiiリモコンの位置情報を返す
+	 * Wiiリモコンの指定された座標の情報を返す
 	 * @param pos 座標
 	 * @return 指定された座標位置
 	 * @throws WiimoteNotConnectException Wiiリモコンが未接続
@@ -235,7 +256,7 @@ public class Wiimote{
 	}
 
 	/**
-	 * Wiiリモコンの位置情報を返す
+	 * Wiiリモコンの全ての位置情報を返す
 	 * @return 位置情報MAP
 	 * @throws WiimoteNotConnectException Wiiリモコンが未接続
 	 */
@@ -243,6 +264,23 @@ public class Wiimote{
 	public Map<Integer, Double> getPositionInfo() throws WiimoteNotConnectException{
 		if(wiiremote != null && wiiremote.isConnected()){
 			return (Map)positionMap.clone();
+		}else{
+			throw new WiimoteNotConnectException();
+		}		
+	}
+
+	/**
+	 * Wiiリモコンのボタンと位置全ての情報を返す
+	 * @return 情報MAP
+	 * @throws WiimoteNotConnectException Wiiリモコンが未接続
+	 */
+	@SuppressWarnings("unchecked")
+	public Map<Integer, Object> getStatus() throws WiimoteNotConnectException{
+		if(wiiremote != null && wiiremote.isConnected()){
+			Map posInfo = (Map)positionMap.clone();
+			Map btnInfo = (Map)buttonMap.clone();
+			posInfo.putAll(btnInfo);
+			return posInfo;
 		}else{
 			throw new WiimoteNotConnectException();
 		}		
@@ -281,6 +319,17 @@ public class Wiimote{
 	}
 	
 	// Inner Class ==============================
+	private class DefaultLEDLightsSetter extends TimerTask{
+		@Override
+		public void run() {
+			try {
+				wiiremote.setLEDLights(getDefaultLEDPattern());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	/**
 	 * Wiiリモコンイベントリスナ
 	 * @author nemoto.hrs
@@ -332,6 +381,7 @@ public class Wiimote{
 
 		public void disconnected() {
 			System.out.println("=== DISCONNECT === wiimoteNo:"+wiimoteNo);
+			wiiremote = null;
 		}
 
 		public void extensionConnected(WiiRemoteExtension arg0) {

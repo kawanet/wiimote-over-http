@@ -18,6 +18,12 @@ public class Constant {
 	public static final String SET_LED_LIGHTS 	= "setLEDLights";
 	public static final String POSITION_INFO 		= "PositionInfo";
 
+	public static final String FIND_WIIMOTE 		= "findWiimote";
+	public static final String RELEASE_WIIMOTE 	= "releaseWiimote";
+	public static final String SET_VIBRATE 		= "setVibrate";
+	public static final String SET_LED		 	= "setLED";
+	public static final String GET_STATUS		 	= "getStatus";
+
 	/** XMLステータス */
 	public static final Integer STATUS_OK 				= 200;
 	public static final Integer STATUS_NG 				= 500;
@@ -37,7 +43,20 @@ public class Constant {
 	public static final String NODE_X_POS 			= "xPos";
 	public static final String NODE_Y_POS 			= "yPos";
 	public static final String NODE_Z_POS 			= "zPos";
-	
+	public static final String NODE_BTN_ONE 			= "one";
+	public static final String NODE_BTN_TWO			= "two";
+	public static final String NODE_BTN_A 			= "a";
+	public static final String NODE_BTN_B 			= "b";
+	public static final String NODE_BTN_MINUS			= "minus";
+	public static final String NODE_BTN_PLUS 			= "plus";
+	public static final String NODE_BTN_HOME 			= "home";
+	public static final String NODE_BTN_UP 			= "up";
+	public static final String NODE_BTN_DOWN 			= "down";
+	public static final String NODE_BTN_LEFT 			= "left";
+	public static final String NODE_BTN_RIGHT			= "right";
+	public static final String NODE_WIIMOTE 			= "wiimote";
+	public static final String ATTR_INDEX 			= "index";
+
 	/** レスポンスタイプ */
 	public static final String RESPONSE_XML 	= "XML";
 	public static final String RESPONSE_JSON 	= "JSON";

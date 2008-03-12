@@ -17,17 +17,17 @@ import wiiremotej.WiiRemoteJ;
 public class WiimoteManager {
 
 	/** Wiiリモコン最大接続数 */
-	private static final int maxStock = 8;
+	private static final int maxStock = 7;
 	/** デフォルトLED点灯パターンリスト */
 	private final static boolean[][] LED_PATTERN = {
+		{true,	true,	true,	true},
 		{true,	false,	false,	false},
 		{false,	true,	false,	false},
 		{false,	false,	true,	false},
 		{false,	false,	false,	true},
-		{true,	true,	false,	false},
-		{true,	false,	true,	false},
 		{true,	false,	false,	true},
-		{false,	true,	true,	false},
+		{false,	true,	false,	true},
+		{false,	false,	true,	true}
 	};
 
 	/** Wiiリモコン保持Map */
@@ -42,7 +42,7 @@ public class WiimoteManager {
 		// WiiRemoteJクラスのログのコンソール表示ON
 		WiiRemoteJ.setConsoleLoggingAll();
 		// Wiiリモコンのインスタンスをマッピング
-		for(int i = 0; i < maxStock; i++){
+		for(int i = 1; i <= maxStock; i++){
 			Wiimote wiim = new Wiimote(i);
 			wiim.setDefaultLEDPattern(LED_PATTERN[i]);
 			wiimoteMap.put(i, wiim);
@@ -61,17 +61,63 @@ public class WiimoteManager {
 		keyMap.put("RIGHT", Wiimote.KEY_RIGHT);
 	}
 	
+//	/**
+//	 * 周辺のWiiリモコンを探し、接続を行う（1台のみ）
+//	 * @return 接続成功の場合はtrue　接続失敗、未検出の場合はfalse
+//	 */
+//	public boolean findWiimote(){
+//		Wiimote wiim = null;
+//		if((wiim = this.getWiimote()) != null){
+//			// Wiiリモコンを探す＆接続
+//			return wiim.connect();
+//		}
+//		return false;
+//	}
+
 	/**
 	 * 周辺のWiiリモコンを探し、接続を行う
-	 * @return 接続成功の場合はtrue　接続失敗、未検出の場合はfalse
+	 * @return 接続成功数
 	 */
-	public boolean findWiimote(){
-		Wiimote wiim = null;
-		if((wiim = this.getWiimote()) != null){
-			// Wiiリモコンを探す＆接続
-			return wiim.connect();
+	public int findWiimote(){
+		int wCnt = 0;
+		for(int i = 1; i <= maxStock; i++){
+			Wiimote wiim = wiimoteMap.get(i);
+			if(wiim != null && !wiim.isConnected()){
+				if(wiim.connect()){
+					wCnt++;
+				}else{
+					break;
+				}
+			}
 		}
-		return false;
+		return wCnt;
+	}
+
+	/**
+	 * 接続されているWiiリモコンを切断する
+	 * @param wiimoteNo WiiリモコンNo.
+	 * @throws WiimoteNotFoundException Wiiリモコンが存在しない(不正なWiiリモコンNo.)
+	 */
+	public void releaseWiimote(int wiimoteNo) throws WiimoteNotFoundException{
+		if(!wiimoteMap.containsKey(wiimoteNo)){
+			throw new WiimoteNotFoundException();
+		}
+		Wiimote wiim = wiimoteMap.get(wiimoteNo);
+		if(wiim != null && wiim.isConnected()){
+			wiim.disconnect();
+		}
+	}
+
+	/**
+	 * 接続されている全てのWiiリモコンを切断する
+	 */
+	public void releaseAllWiimote(){
+		for(int i = 1; i <= maxStock; i++){
+			Wiimote wiim = wiimoteMap.get(i);
+			if(wiim != null && wiim.isConnected()){
+				wiim.disconnect();
+			}
+		}
 	}
 
 	/**
@@ -89,7 +135,7 @@ public class WiimoteManager {
 	}
 
 	/**
-	 * 指定されたWiiリモコンのバイブレーションをONにする
+	 * 指定されたWiiリモコンのバイブレーションを指定秒数間ONにする
 	 * @param wiimoteNo WiiリモコンNo.
 	 * @throws IOException 
 	 * @throws WiimoteNotFoundException Wiiリモコンが存在しない(不正なWiiリモコンNo.)
@@ -105,7 +151,7 @@ public class WiimoteManager {
 	}
 
 	/**
-	 * 指定されたWiiリモコンのボタンが押下されたか判断する
+	 * 指定されたWiiリモコンの指定されたボタンが押下されたか判断する
 	 * @param wiimoteNo WiiリモコンNo.
 	 * @param keyName ボタン名
 	 * @return 押されていた場合はtrue
@@ -144,6 +190,24 @@ public class WiimoteManager {
 	}
 
 	/**
+	 * 指定されたWiiリモコンのLEDを指定されたパターンで指定秒数間点灯させる
+	 * @param wiimoteNo WiiリモコンNo.
+	 * @param pattern 点灯パターン
+	 * @throws WiimoteNotFoundException Wiiリモコンが存在しない(不正なWiiリモコンNo.)
+	 * @throws WiimoteNotConnectException Wiiリモコンが未接続
+	 * @throws IllegalArgumentException
+	 * @throws IOException
+	 */
+	public void setLEDLightsFor(int wiimoteNo, boolean[] pattern, long milliSec) 
+	throws WiimoteNotFoundException, IllegalArgumentException, IOException, WiimoteNotConnectException{
+		if(!wiimoteMap.containsKey(wiimoteNo)){
+			throw new WiimoteNotFoundException();
+		}
+		Wiimote wiim = wiimoteMap.get(wiimoteNo);
+		wiim.setLEDLightsFor(pattern, milliSec);
+	}
+
+	/**
 	 * 指定されたWiiリモコンの位置情報を返す
 	 * @param wiimoteNo WiiリモコンNo.
 	 * @return 位置情報MAP
@@ -158,13 +222,50 @@ public class WiimoteManager {
 		Wiimote wiim = wiimoteMap.get(wiimoteNo);
 		return wiim.getPositionInfo();
 	}
-	
+
+	/**
+	 * 指定されたWiiリモコンの情報を返す
+	 * @param wiimoteNo WiiリモコンNo.
+	 * @return 情報MAP
+	 * @throws WiimoteNotFoundException Wiiリモコンが存在しない(不正なWiiリモコンNo.)
+	 * @throws WiimoteNotConnectException Wiiリモコンが未接続
+	 */
+	public Map<Integer, Map> getStatus(int wiimoteNo) 
+	throws WiimoteNotFoundException, WiimoteNotConnectException{
+		Map<Integer, Map> map = new HashMap<Integer, Map>();
+		if(!wiimoteMap.containsKey(wiimoteNo)){
+			throw new WiimoteNotFoundException();
+		}
+		Wiimote wiim = wiimoteMap.get(wiimoteNo);
+		map.put(wiimoteNo, wiim.getStatus());
+		return map;
+	}
+
+	/**
+	 * 全てのWiiリモコンの情報を返す
+	 * @return 情報MAP
+	 * @throws WiimoteNotFoundException Wiiリモコンが存在しない(不正なWiiリモコンNo.)
+	 * @throws WiimoteNotConnectException Wiiリモコンが未接続
+	 */
+	public Map<Integer, Map> getAllStatus() 
+	throws WiimoteNotFoundException, WiimoteNotConnectException{
+		Map<Integer, Map> map = new HashMap<Integer, Map>();
+		for(int i = 1; i <= maxStock; i++){
+			Wiimote wiim = wiimoteMap.get(i);
+			if(wiim != null && wiim.isConnected()){
+				map.put(i, wiim.getStatus());
+			}
+		}
+		return map;
+	}
+
 	/**
 	 * 空きのWiiリモコンを返す
 	 * @return Wiiリモコン
 	 */
+	@SuppressWarnings("unused")
 	private synchronized Wiimote getWiimote(){
-		for(int i = 0; i < maxStock; i++){
+		for(int i = 1; i <= maxStock; i++){
 			Wiimote wiim = wiimoteMap.get(i);
 			if(wiim == null || !wiim.isConnected()){
 				return wiim;
