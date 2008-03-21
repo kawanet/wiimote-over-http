@@ -29,13 +29,7 @@ input.txt {
 }
 </style>
 <script type="text/javascript" src="js/wiimote.js"></script>
-<script type="text/javascript" >
-  function call(value) {
-    alert(value);
-  }
-</script>
 <script type="text/javascript" src="http://localhost:8080/execute.json?callback=call"></script>
-
 
 </head>
 <body onload="changeParam();">
@@ -48,10 +42,10 @@ input.txt {
 			<select name="method" onchange="changeParam();">
 				<option value="findWiimote">[findWiimote]　Wiiリモコン探索・接続</option>
 				<option value="isConnected">[isConnected]　Wiiリモコン接続状況取得</option>
-				<option value="setVibrate">[setVibrate]　バイブレーション操作</option>
-				<option value="isPressed">[isPressed]　ボタン押下状況取得</option>
 				<option value="getStatus">[getStatus]　Wiiリモコン操作情報取得</option>
+				<option value="setVibrate">[setVibrate]　バイブレーション操作</option>
 				<option value="setLED">[setLED]　LED点灯・消灯操作</option>
+				<option value="isPressed">[isPressed]　ボタン押下状況取得</option>
 				<option value="releaseWiimote">[releaseWiimote]　Wiiリモコン切断</option>
 			</select>
 		</td>
@@ -98,12 +92,18 @@ input.txt {
 		<td class="val"><input class="txt" type="text" name="light" value="1,0,1,0"/></td>
 	</tr>
 	<tr>
-		<td class="index">response</td>
+		<td class="index">responseType</td>
 		<td class="val">
 			<select name="responseType" onchange="changeParam();">
-				<option value="XML">XML</option>
-				<option value="JSON">JSON</option>
+				<option value="xml">XML</option>
+				<option value="json">JSON</option>
 			</select>
+		</td>
+	</tr>
+	<tr>
+		<td class="index">callback</td>
+		<td class="val">
+			<input class="txt" type="text" name="callback" value="callback"/>
 		</td>
 	</tr>
 </table>

@@ -1,9 +1,12 @@
 function changeParam(){
 	var method = document.getElementById("method").value;
+	var resType = document.getElementById("responseType").value;
 	tWiimote = document.getElementById("wiimote");
 	tTime = document.getElementById("time");
 	tButton = document.getElementById("button");
 	tLight = document.getElementById("light");
+	tCallback = document.getElementById("callback");
+	// メソッド
 	if(method == "findWiimote"){
 		tWiimote.disabled 			= true;
 		tTime.disabled 					= true;
@@ -40,4 +43,11 @@ function changeParam(){
 		tButton.disabled 				= true;
 		tLight.disabled 				= false;
 	}	
+	
+	// レスポンスタイプ
+	if(responseType == "json"){
+		tCallback.disabled 			= false;
+	}else{
+		tCallback.disabled 			= true;
+	}
 }

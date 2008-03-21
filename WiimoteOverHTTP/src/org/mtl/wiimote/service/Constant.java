@@ -9,6 +9,7 @@ public class Constant {
 	public static final String TIME 			= "time";
 	public static final String BUTTON 		= "button";
 	public static final String RESPONSE_TYPE 	= "responseType";
+	public static final String CALLBACK 		= "callback";
 	
 	/** パラメータ(METHOD) VALUE */
 	public static final String FIND_REMOTE 		= "findRemote";
@@ -58,7 +59,20 @@ public class Constant {
 	public static final String ATTR_INDEX 			= "index";
 
 	/** レスポンスタイプ */
-	public static final String RESPONSE_XML 	= "XML";
-	public static final String RESPONSE_JSON 	= "JSON";
+	public static final String RESPONSE_XML 		= "xml";
+	public static final String RESPONSE_JSON 		= "json";
+	public static final String RESPONSE_JSONP 	= "jsonp";
+	
+	/** レスポンスヘッダ */
+	public static final String HD_RESPONSE_XML 	= "application/xml;";
+	public static final String HD_RESPONSE_JSON 	= "text/plain;";
+	public static final String HD_RESPONSE_JSONP 	= "text/javascript;";
+	
+	/** エンコード */
+	public static final String UTF8 		= "UTF8";
+	public static final String SJIS 		= "Shift_JIS";
+	public static final String EUC_JP 	= "EUC-JP";
+	
+	
 	
 }
