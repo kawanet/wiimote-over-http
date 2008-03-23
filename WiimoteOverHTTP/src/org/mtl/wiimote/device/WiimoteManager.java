@@ -254,7 +254,6 @@ public class WiimoteManager {
 			Wiimote wiim = wiimoteMap.get(i);
 			if(wiim != null && wiim.isConnected()){
 				map.put(i, wiim.getStatus());
-				map.put(i+1, wiim.getStatus());
 			}
 		}
 		if(map.size() == 0){

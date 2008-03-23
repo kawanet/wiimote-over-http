@@ -319,6 +319,9 @@ public class Wiimote{
 	}
 	
 	// Inner Class ==============================
+	/**
+	 * LEDデフォルト点灯パターンセッター
+	 */
 	private class DefaultLEDLightsSetter extends TimerTask{
 		@Override
 		public void run() {
@@ -329,7 +332,7 @@ public class Wiimote{
 			}
 		}
 	}
-	
+
 	/**
 	 * Wiiリモコンイベントリスナ
 	 * @author nemoto.hrs

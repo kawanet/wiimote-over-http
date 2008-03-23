@@ -45,7 +45,7 @@ function changeParam(){
 	}	
 	
 	// レスポンスタイプ
-	if(responseType == "json"){
+	if(resType == "json"){
 		tCallback.disabled 			= false;
 	}else{
 		tCallback.disabled 			= true;

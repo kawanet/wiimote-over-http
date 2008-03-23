@@ -2,7 +2,6 @@ package org.mtl.wiimote.service;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -10,20 +9,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
-import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
-import net.sf.json.JSONSerializer;
 import net.sf.json.xml.XMLSerializer;
 
 import org.apache.commons.validator.GenericValidator;
@@ -31,10 +19,6 @@ import org.mtl.wiimote.device.Wiimote;
 import org.mtl.wiimote.device.WiimoteManager;
 import org.mtl.wiimote.exception.WiimoteNotConnectException;
 import org.mtl.wiimote.exception.WiimoteNotFoundException;
-import org.w3c.dom.DOMImplementation;
-import org.w3c.dom.Document;
-import org.w3c.dom.DocumentType;
-import org.w3c.dom.Element;
 
 /**
  * WiimoteOverHTTPサーブレットクラス
@@ -47,12 +31,7 @@ public class WiimoteServiceAction extends HttpServlet{
 	
 	/** Wiiリモコン管理クラス*/
 	private static WiimoteManager manager = null;
-	/** XMLドキュメント */
-	private Document document = null;
 	
-	/** JSONオブジェクト */
-	private JSONObject jobj = new JSONObject();
-
 	@Override
 	protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{
 		// XMLステータス初期化
@@ -72,53 +51,51 @@ public class WiimoteServiceAction extends HttpServlet{
 		String resType 	= request.getParameter(Constant.RESPONSE_TYPE);
 		String callback = request.getParameter(Constant.CALLBACK);
 
-		Element responseNode = null;
+		JSONObject jResponse = null;
 		try {
-			// response ノード作成
-			responseNode = this.createRootNode(Constant.NODE_RESPONSE);
+			// response データ作成
+			jResponse = new JSONObject();
 			// method ノード作成
-			responseNode.appendChild(this.createNode(Constant.NODE_METHOD, method));
-			
-//			jobj.put(Constant.NODE_METHOD, method);
-//			jobj.put(Constant.NODE_STATUS, returnStatus.toString());
+			jResponse.put(Constant.NODE_METHOD, method);
+			// status ノード作成
+			jResponse.put(Constant.NODE_STATUS, returnStatus.toString());
 			
 			// Wiiリモコンに対する処理の実行
 			if(!GenericValidator.isBlankOrNull(method)){
 				if(method.equals(Constant.FIND_WIIMOTE)){
-					this.findWiimote(responseNode);
+					this.findWiimote(jResponse);
 				}else if(method.equals(Constant.RELEASE_WIIMOTE)){
-					this.releaseWiimote(responseNode, wiimote);
+					this.releaseWiimote(jResponse, wiimote);
 				}else if(method.equals(Constant.IS_CONNECTED)){
-					this.isConnected(responseNode, wiimote);
+					this.isConnected(jResponse, wiimote);
 				}else if(method.equals(Constant.POSITION_INFO)){
-					this.getPositionInfo(responseNode, wiimote);
+					this.getPositionInfo(jResponse, wiimote);
 				}else if(method.equals(Constant.GET_STATUS)){
-					this.getStatus(responseNode, wiimote);
-//					this.getStatus(jobj, wiimote);
+					this.getStatus(jResponse, wiimote);
 				}else if(method.equals(Constant.SET_VIBRATE)){
-					this.setVibrate(responseNode, wiimote, time);
+					this.setVibrate(jResponse, wiimote, time);
 				}else if(method.equals(Constant.IS_PRESSED)){
-					this.isPressed(responseNode, wiimote, button);
+					this.isPressed(jResponse, wiimote, button);
 				}else if(method.equals(Constant.SET_LED)){
-					this.setLED(responseNode, wiimote, light, time);
+					this.setLED(jResponse, wiimote, light, time);
 				}else{
 					// status ノード追加
 					returnStatus = Constant.STATUS_METHOD_NOT_FOUND;
-					responseNode.appendChild(this.createNode(Constant.NODE_STATUS, returnStatus.toString()));
+					jResponse.put(Constant.NODE_STATUS, returnStatus.toString());
 				}
 			}else{
 				// status ノード追加
 				returnStatus = Constant.STATUS_METHOD_NOT_FOUND;
-				responseNode.appendChild(this.createNode(Constant.NODE_STATUS, returnStatus.toString()));
+				jResponse.put(Constant.NODE_STATUS, returnStatus.toString());
 			}
 		}catch(Exception e){
 			// status ノード追加
 			returnStatus = Constant.STATUS_NG;
-			responseNode.appendChild(this.createNode(Constant.NODE_STATUS, returnStatus.toString()));
+			jResponse.put(Constant.NODE_STATUS, returnStatus.toString());
 			e.printStackTrace();
 		}finally{
 			// 結果を出力
-			this.writeResponse(response, resType, callback);
+			this.writeResponse(response, resType, jResponse, callback);
 		}
 	}
 	
@@ -126,7 +103,7 @@ public class WiimoteServiceAction extends HttpServlet{
 	 * Wiiリモコン探索・接続
 	 * @param rNode XML基点ノード
 	 */
-	private void findWiimote(Element rNode){
+	private void findWiimote(JSONObject rNode){
 		Integer st = 0;
 		try{
 			manager.findWiimote();
@@ -135,14 +112,14 @@ public class WiimoteServiceAction extends HttpServlet{
 			st = Constant.STATUS_NG;
 		}
 		// status ノード追加
-		rNode.appendChild(this.createNode(Constant.NODE_STATUS, st.toString()));
+		rNode.put(Constant.NODE_STATUS, st.toString());
 	}
 
 	/**
 	 * Wiiリモコン切断
 	 * @param rNode XML基点ノード
 	 */
-	private void releaseWiimote(Element rNode, String wiimote){
+	private void releaseWiimote(JSONObject rNode, String wiimote){
 		Integer st = 0;
 		try{
 			if(wiimote != null && GenericValidator.isInt(wiimote)){
@@ -155,7 +132,7 @@ public class WiimoteServiceAction extends HttpServlet{
 			st = Constant.STATUS_NG;
 		}
 		// status ノード追加
-		rNode.appendChild(this.createNode(Constant.NODE_STATUS, st.toString()));
+		rNode.put(Constant.NODE_STATUS, st.toString());
 	}
 
 	/**
@@ -163,7 +140,7 @@ public class WiimoteServiceAction extends HttpServlet{
 	 * @param rNode XML基点ノード
 	 * @param wiimote WiiリモコンNo.
 	 */
-	private void isConnected(Element rNode, String wiimote){
+	private void isConnected(JSONObject rNode, String wiimote){
 		Integer st = 0;
 		boolean bol = false;
 		try{
@@ -179,11 +156,9 @@ public class WiimoteServiceAction extends HttpServlet{
 			st = Constant.STATUS_NG;
 		}
 		// status ノード追加
-		rNode.appendChild(this.createNode(Constant.NODE_STATUS, st.toString()));
+		rNode.put(Constant.NODE_STATUS, st.toString());
 		// data ノード追加
-		Element data = this.createNode(Constant.NODE_DATA, null);
-		data.appendChild(this.createNode(Constant.NODE_BOOL, (bol?"1":"0")));
-		rNode.appendChild(data);
+		rNode.put(Constant.NODE_DATA, (bol?"1":"0"));
 	}
 	
 	/**
@@ -191,7 +166,7 @@ public class WiimoteServiceAction extends HttpServlet{
 	 * @param rNode XML基点ノード
 	 * @param wiimote WiiリモコンNo.
 	 */
-	private void getPositionInfo(Element rNode, String wiimote){
+	private void getPositionInfo(JSONObject rNode, String wiimote){
 		Integer st = 0;
 		Map<Integer, Double> posInfo = null;
 		try {
@@ -209,70 +184,15 @@ public class WiimoteServiceAction extends HttpServlet{
 			st = Constant.STATUS_NG;
 		}
 		// status ノード追加
-		rNode.appendChild(this.createNode(Constant.NODE_STATUS, st.toString()));
+		rNode.put(Constant.NODE_STATUS, st.toString());
 		// data ノード追加
-		Element data = this.createNode(Constant.NODE_DATA, null);
-		data.appendChild(this.createNode(Constant.NODE_X_POS, posInfo.get(Wiimote.POS_X).toString()));
-		data.appendChild(this.createNode(Constant.NODE_Y_POS, posInfo.get(Wiimote.POS_Y).toString()));
-		data.appendChild(this.createNode(Constant.NODE_Z_POS, posInfo.get(Wiimote.POS_Z).toString()));
-		data.appendChild(this.createNode(Constant.NODE_PITCH, posInfo.get(Wiimote.POS_PITCH).toString()));
-		data.appendChild(this.createNode(Constant.NODE_ROLL,  posInfo.get(Wiimote.POS_ROLL).toString()));
-		rNode.appendChild(data);
-	}
-
-	/**
-	 * Wiiリモコン情報取得
-	 * @param rNode XML基点ノード
-	 * @param wiimote WiiリモコンNo.
-	 */
-	private void getStatus(Element rNode, String wiimote){
-		Integer st = 0;
-		Map allInfo = null;
-		try {
-			if(wiimote != null && GenericValidator.isInt(wiimote)){
-				allInfo = manager.getStatus(Integer.parseInt(wiimote));
-			}else{
-				allInfo = manager.getAllStatus();
-			}
-			st = Constant.STATUS_OK;
-
-		}catch(WiimoteNotFoundException e){
-			st = Constant.STATUS_WIIMOTE_NOT_FOUND;
-		}catch(WiimoteNotConnectException e){
-			st = Constant.STATUS_WIIMOTE_NOT_FOUND;
-		}catch(Exception e){
-			st = Constant.STATUS_NG;
-		}
-		// status ノード追加
-		rNode.appendChild(this.createNode(Constant.NODE_STATUS, st.toString()));
-		if(allInfo != null){
-			// data ノード追加
-			Element data = this.createNode(Constant.NODE_DATA, null);
-			Iterator itr = allInfo.keySet().iterator();
-			while(itr.hasNext()){
-				Integer idx = (Integer)itr.next();
-				Map info = (Map)allInfo.get(idx);
-				Element wiiElm = this.createNode(Constant.NODE_WIIMOTE, Constant.ATTR_INDEX, idx.toString(), null);
-				wiiElm.appendChild(this.createNode(Constant.NODE_X_POS, 		info.get(Wiimote.POS_X).toString()));
-				wiiElm.appendChild(this.createNode(Constant.NODE_Y_POS, 		info.get(Wiimote.POS_Y).toString()));
-				wiiElm.appendChild(this.createNode(Constant.NODE_Z_POS, 		info.get(Wiimote.POS_Z).toString()));
-				wiiElm.appendChild(this.createNode(Constant.NODE_PITCH, 		info.get(Wiimote.POS_PITCH).toString()));
-				wiiElm.appendChild(this.createNode(Constant.NODE_ROLL,  		info.get(Wiimote.POS_ROLL).toString()));
-				wiiElm.appendChild(this.createNode(Constant.NODE_BTN_A, 		(Boolean)info.get(Wiimote.KEY_A)?"1":"0"));
-				wiiElm.appendChild(this.createNode(Constant.NODE_BTN_B, 		(Boolean)info.get(Wiimote.KEY_B)?"1":"0"));
-				wiiElm.appendChild(this.createNode(Constant.NODE_BTN_ONE, 		(Boolean)info.get(Wiimote.KEY_ONE)?"1":"0"));
-				wiiElm.appendChild(this.createNode(Constant.NODE_BTN_TWO, 		(Boolean)info.get(Wiimote.KEY_TWO)?"1":"0"));
-				wiiElm.appendChild(this.createNode(Constant.NODE_BTN_MINUS, 	(Boolean)info.get(Wiimote.KEY_MINUS)?"1":"0"));
-				wiiElm.appendChild(this.createNode(Constant.NODE_BTN_PLUS, 		(Boolean)info.get(Wiimote.KEY_PLUS)?"1":"0"));
-				wiiElm.appendChild(this.createNode(Constant.NODE_BTN_HOME, 		(Boolean)info.get(Wiimote.KEY_HOME)?"1":"0"));
-				wiiElm.appendChild(this.createNode(Constant.NODE_BTN_UP, 		(Boolean)info.get(Wiimote.KEY_UP)?"1":"0"));
-				wiiElm.appendChild(this.createNode(Constant.NODE_BTN_DOWN, 		(Boolean)info.get(Wiimote.KEY_DOWN)?"1":"0"));
-				wiiElm.appendChild(this.createNode(Constant.NODE_BTN_LEFT, 		(Boolean)info.get(Wiimote.KEY_LEFT)?"1":"0"));
-				wiiElm.appendChild(this.createNode(Constant.NODE_BTN_RIGHT, 	(Boolean)info.get(Wiimote.KEY_RIGHT)?"1":"0"));
-				data.appendChild(wiiElm);
-			}
-			rNode.appendChild(data);
-		}
+		JSONObject data = new JSONObject();
+		data.put(Constant.NODE_X_POS, posInfo.get(Wiimote.POS_X).toString());
+		data.put(Constant.NODE_Y_POS, posInfo.get(Wiimote.POS_Y).toString());
+		data.put(Constant.NODE_Z_POS, posInfo.get(Wiimote.POS_Z).toString());
+		data.put(Constant.NODE_PITCH, posInfo.get(Wiimote.POS_PITCH).toString());
+		data.put(Constant.NODE_ROLL,  posInfo.get(Wiimote.POS_ROLL).toString());
+		rNode.put(Constant.NODE_DATA, data);
 	}
 
 	/**
@@ -307,7 +227,6 @@ public class WiimoteServiceAction extends HttpServlet{
 			while(itr.hasNext()){
 				Integer idx = (Integer)itr.next();
 				Map info = (Map)allInfo.get(idx);
-				JSONObject wiim = new JSONObject();
 				JSONObject wiimVal = new JSONObject();
 				wiimVal.put("@"+Constant.ATTR_INDEX, idx.toString());
 				wiimVal.put(Constant.NODE_X_POS, 		info.get(Wiimote.POS_X).toString());
@@ -326,10 +245,9 @@ public class WiimoteServiceAction extends HttpServlet{
 				wiimVal.put(Constant.NODE_BTN_DOWN, 	(Boolean)info.get(Wiimote.KEY_DOWN)?"1":"0");
 				wiimVal.put(Constant.NODE_BTN_LEFT, 	(Boolean)info.get(Wiimote.KEY_LEFT)?"1":"0");
 				wiimVal.put(Constant.NODE_BTN_RIGHT, 	(Boolean)info.get(Wiimote.KEY_RIGHT)?"1":"0");
-				wiim.put(Constant.NODE_WIIMOTE, wiimVal);
-				wiimArr.add(wiim);
+				wiimArr.add(wiimVal);
 			}
-			rNode.element(Constant.NODE_DATA, wiimArr);
+			rNode.put(Constant.NODE_DATA, wiimArr);
 		}
 	}
 	
@@ -339,7 +257,7 @@ public class WiimoteServiceAction extends HttpServlet{
 	 * @param wiimote WiiリモコンNo.
 	 * @param time バイブレーション時間
 	 */
-	private void setVibrate(Element rNode, String wiimote, String time){
+	private void setVibrate(JSONObject rNode, String wiimote, String time){
 		Integer st = 0;
 		try {
 			if(wiimote != null && GenericValidator.isInt(wiimote) && 
@@ -357,7 +275,7 @@ public class WiimoteServiceAction extends HttpServlet{
 			st = Constant.STATUS_NG;
 		}
 		// status ノード追加
-		rNode.appendChild(this.createNode(Constant.NODE_STATUS, st.toString()));
+		rNode.put(Constant.NODE_STATUS, st.toString());
 	}
 	
 	/**
@@ -366,7 +284,7 @@ public class WiimoteServiceAction extends HttpServlet{
 	 * @param button ボタン名
 	 * @return ステータス
 	 */
-	private void isPressed(Element rNode, String wiimote, String button){
+	private void isPressed(JSONObject rNode, String wiimote, String button){
 		Integer st = 0;
 		boolean bol = false;
 		try{
@@ -385,11 +303,11 @@ public class WiimoteServiceAction extends HttpServlet{
 			st = Constant.STATUS_NG;
 		}
 		// status ノード追加
-		rNode.appendChild(this.createNode(Constant.NODE_STATUS, st.toString()));
+		rNode.put(Constant.NODE_STATUS, st.toString());
 		// data ノード追加
-		Element data = this.createNode(Constant.NODE_DATA, null);
-		data.appendChild(this.createNode(Constant.NODE_BOOL, (bol?"1":"0")));
-		rNode.appendChild(data);
+		JSONObject data = new JSONObject();
+		data.put(Constant.NODE_BOOL, (bol?"1":"0"));
+		rNode.put(Constant.NODE_DATA, data);
 	}
 	
 	/**
@@ -398,7 +316,7 @@ public class WiimoteServiceAction extends HttpServlet{
 	 * @param light LED点灯パターン
 	 * @return ステータス
 	 */
-	private void setLED(Element rNode, String wiimote, String light, String time){
+	private void setLED(JSONObject rNode, String wiimote, String light, String time){
 		Integer st = 0;
 		try{
 			if(wiimote != null && GenericValidator.isInt(wiimote) && 
@@ -421,107 +339,43 @@ public class WiimoteServiceAction extends HttpServlet{
 			st = Constant.STATUS_NG;
 		}
 		// status ノード追加
-		rNode.appendChild(this.createNode(Constant.NODE_STATUS, st.toString()));
+		rNode.put(Constant.NODE_STATUS, st.toString());
 	}
 	
-	/**
-	 * 基点ノードを作成
-	 * @param docName 基点ノード名
-	 * @return ノードオブジェクト
-	 * @throws ParserConfigurationException 
-	 * @throws ParserConfigurationException
-	 */
-	private Element createRootNode(String docName) throws ParserConfigurationException{
-		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder builder = factory.newDocumentBuilder();
-		DOMImplementation domImpl = builder.getDOMImplementation();
-		document = domImpl.createDocument("", docName, null);
-		return document.getDocumentElement();
-	}
-	
-	/**
-	 * ノードを作成
-	 * @param nodeName ノード名
-	 * @param nodeValue ノードの値
-	 * @return ノードオブジェクト
-	 */
-	private Element createNode(String nodeName, String nodeValue){
-		return this.createNode(nodeName, null, null, nodeValue);
-	}
-
-	/**
-	 * ノードを作成
-	 * @param nodeName ノード名
-	 * @param nodeValue ノードの値
-	 * @return ノードオブジェクト
-	 */
-	private Element createNode(String nodeName, String attrName, String attrValue, String nodeValue){
-		Element node = null;
-		if(nodeName != null){
-			node = document.createElement(nodeName);
-			if(attrName != null && attrValue != null){
-				node.setAttribute(attrName, attrValue);
-			}
-			if(nodeValue != null){
-				node.appendChild(document.createTextNode(nodeValue));
-			}
-		}
-		return node;
-	}
-	
-
 	/**
 	 * 出力を行う
 	 * @param writer 
 	 * @param type
 	 */
-	private void writeResponse(HttpServletResponse response, String type, String callback){
+	private void writeResponse(HttpServletResponse response, String type, JSONObject jobj, String callback){
 		PrintWriter writer = null;
 		try{
 			// レスポンスのライターを取得
 			response.setCharacterEncoding(Constant.UTF8);
 			writer = response.getWriter();
-			
-			// XML DOM作成
-			StringWriter xmlDom = new StringWriter();
-			StreamResult result = new StreamResult(xmlDom);
-			DOMSource source = new DOMSource(document);
-			Transformer transformer = TransformerFactory.newInstance().newTransformer();
-			transformer.transform(source, result);
+
+			XMLSerializer serializer = new XMLSerializer();
+			serializer.setRootName(Constant.NODE_RESPONSE);
+			serializer.setElementName(Constant.NODE_WIIMOTE);
+			serializer.setTypeHintsEnabled(false);
 
 			// XML
 			if(type == null || type.equals(Constant.RESPONSE_XML)){
 				response.setContentType(Constant.HD_RESPONSE_XML);
-				writer.write(xmlDom.toString());
-//				XMLSerializer serializer = new XMLSerializer();
-//				serializer.setRootName(Constant.NODE_RESPONSE);
-//				serializer.setElementName(null);
-//				serializer.setTypeHintsEnabled(false);
-//				writer.write(serializer.write(jobj));
+				writer.write(serializer.write(jobj));
 			// JSON・JSONP
 			}else if(type.equals(Constant.RESPONSE_JSON)){
-				XMLSerializer serializer = new XMLSerializer();
-//				serializer.setForceTopLevelObject(true);
-//				serializer.setSkipNamespaces(false);
-//				serializer.setRootName(Constant.NODE_RESPONSE);
-//				serializer.setElementName(Constant.NODE_DATA);
-				JSON json = serializer.read(xmlDom.toString());
 				// callbackパラメタが指定された場合はJSONPで返す
 				if(callback != null && !callback.equals("")){
 					response.setContentType(Constant.HD_RESPONSE_JSONP);
-					writer.write(callback+"("+json+");");
+					writer.write(callback+"("+jobj.toString()+");");
 				}else{
 					response.setContentType(Constant.HD_RESPONSE_JSON);
-					json.write(writer);
-//					jobj.write(writer);
+					jobj.write(writer);
 				}
 			}else{
 				writer.write("illigal responseType");
 			}
-		}catch(TransformerConfigurationException e){
-			e.printStackTrace();
-		}catch(TransformerException e){
-			e.printStackTrace();
 		}catch(IOException e){
 			e.printStackTrace();
 		}finally{
