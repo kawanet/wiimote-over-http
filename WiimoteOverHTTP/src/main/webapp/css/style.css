@@ -1,0 +1,21 @@
+table.param {
+	border:1px solid #777777;
+}
+td.index {
+	border:1px solid #777777;
+	background-color:#9999FF;
+	font-size:13px;
+	padding:0px 5px;
+}
+td.val {
+	border:1px solid #777777;
+	background-color:#FFFFFF;
+	padding:1px;
+	font-size:12px;
+}
+select {
+	width:300px;
+}
+input.txt {
+	width:295px;
+}
