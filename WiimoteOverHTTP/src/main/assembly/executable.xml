@@ -37,6 +37,7 @@
 			<outputDirectory>/</outputDirectory>
 			<includes>
 				<include>*.properties</include>
+				<include>*.bat</include>
 			</includes>
 		</fileSet>
 	</fileSets>
