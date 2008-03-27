@@ -42,6 +42,11 @@ function changeParam(){
 		tTime.disabled 					= false;
 		tButton.disabled 				= true;
 		tLight.disabled 				= false;
+	}else if(method == "getInfo"){
+		tWiimote.disabled 			= false;
+		tTime.disabled 					= true;
+		tButton.disabled 				= true;
+		tLight.disabled 				= true;
 	}	
 	
 	// レスポンスタイプ

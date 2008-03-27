@@ -6,13 +6,14 @@ import java.util.Map;
 
 import org.mtl.wiimote.exception.WiimoteNotConnectException;
 import org.mtl.wiimote.exception.WiimoteNotFoundException;
+import org.mtl.wiimote.service.Constant;
 
 import wiiremotej.WiiRemoteJ;
 
 /**
  * Wiiリモコン管理クラス
  * @author nemoto.hrs
- * @version 0.1
+ * @version 2008/03/27
  */
 public class WiimoteManager {
 
@@ -48,17 +49,19 @@ public class WiimoteManager {
 			wiimoteMap.put(i, wiim);
 		}
 		// KEYの値をマッピング
-		keyMap.put("A", 	Wiimote.KEY_A);
-		keyMap.put("B", 	Wiimote.KEY_B);
-		keyMap.put("ONE", 	Wiimote.KEY_ONE);
-		keyMap.put("TWO", 	Wiimote.KEY_TWO);
-		keyMap.put("PLUS", 	Wiimote.KEY_PLUS);
-		keyMap.put("MINUS", Wiimote.KEY_MINUS);
-		keyMap.put("HOME", 	Wiimote.KEY_HOME);
-		keyMap.put("UP", 	Wiimote.KEY_UP);
-		keyMap.put("DOWN", 	Wiimote.KEY_DOWN);
-		keyMap.put("LEFT", 	Wiimote.KEY_LEFT);
-		keyMap.put("RIGHT", Wiimote.KEY_RIGHT);
+		keyMap.put(Constant.A, 		Wiimote.KEY_A);
+		keyMap.put(Constant.B, 		Wiimote.KEY_B);
+		keyMap.put(Constant.ONE, 	Wiimote.KEY_ONE);
+		keyMap.put(Constant.TWO, 	Wiimote.KEY_TWO);
+		keyMap.put(Constant.PLUS, 	Wiimote.KEY_PLUS);
+		keyMap.put(Constant.MINUS, 	Wiimote.KEY_MINUS);
+		keyMap.put(Constant.HOME, 	Wiimote.KEY_HOME);
+		keyMap.put(Constant.UP, 	Wiimote.KEY_UP);
+		keyMap.put(Constant.DOWN, 	Wiimote.KEY_DOWN);
+		keyMap.put(Constant.LEFT, 	Wiimote.KEY_LEFT);
+		keyMap.put(Constant.RIGHT, 	Wiimote.KEY_RIGHT);
+		keyMap.put(Constant.C, 		Wiimote.KEY_C);
+		keyMap.put(Constant.Z, 		Wiimote.KEY_Z);
 	}
 	
 //	/**
@@ -224,7 +227,7 @@ public class WiimoteManager {
 	}
 
 	/**
-	 * 指定されたWiiリモコンの情報を返す
+	 * 指定されたWiiリモコンの操作情報を返す
 	 * @param wiimoteNo WiiリモコンNo.
 	 * @return 情報MAP
 	 * @throws WiimoteNotFoundException Wiiリモコンが存在しない(不正なWiiリモコンNo.)
@@ -242,7 +245,7 @@ public class WiimoteManager {
 	}
 
 	/**
-	 * 全てのWiiリモコンの情報を返す
+	 * 全てのWiiリモコンの操作情報を返す
 	 * @return 情報MAP
 	 * @throws WiimoteNotFoundException Wiiリモコンが存在しない(不正なWiiリモコンNo.)
 	 * @throws WiimoteNotConnectException Wiiリモコンが未接続
@@ -254,6 +257,54 @@ public class WiimoteManager {
 			Wiimote wiim = wiimoteMap.get(i);
 			if(wiim != null && wiim.isConnected()){
 				map.put(i, wiim.getStatus());
+			}
+		}
+		if(map.size() == 0){
+			throw new WiimoteNotFoundException();
+		}
+		return map;
+	}
+
+	/**
+	 * 指定されたWiiリモコンの情報を返す
+	 * @param wiimoteNo WiiリモコンNo.
+	 * @return 情報MAP
+	 * @throws WiimoteNotFoundException Wiiリモコンが存在しない(不正なWiiリモコンNo.)
+	 * @throws WiimoteNotConnectException Wiiリモコンが未接続
+	 */
+	public Map<Integer, Map> getInfo(int wiimoteNo) 
+	throws WiimoteNotFoundException, WiimoteNotConnectException{
+		Map<Integer, Map> map = new HashMap<Integer, Map>();
+		Map<String, Object> info = new HashMap<String, Object>();
+		if(!wiimoteMap.containsKey(wiimoteNo)){
+			throw new WiimoteNotFoundException();
+		}
+		Wiimote wiim = wiimoteMap.get(wiimoteNo);
+		info.put(Constant.NODE_BATTERY, wiim.getBatteryLevel());
+		info.put(Constant.NODE_CLASSIC, (wiim.isNumchuk()?"0":"1"));
+		info.put(Constant.NODE_NUNCHUK, (wiim.isNumchuk()?"1":"0"));
+		map.put(wiimoteNo, info);
+		return map;
+	}
+
+	/**
+	 * 全てのWiiリモコンの情報を返す
+	 * @return 情報MAP
+	 * @throws WiimoteNotFoundException Wiiリモコンが存在しない(不正なWiiリモコンNo.)
+	 * @throws WiimoteNotConnectException Wiiリモコンが未接続
+	 */
+	public Map<Integer, Map> getAllInfo() 
+	throws WiimoteNotFoundException, WiimoteNotConnectException{
+		Map<Integer, Map> map = new HashMap<Integer, Map>();
+		Map<String, Object> info = null;
+		for(int i = 1; i <= maxStock; i++){
+			Wiimote wiim = wiimoteMap.get(i);
+			if(wiim != null && wiim.isConnected()){
+				info = new HashMap<String, Object>();
+				info.put(Constant.NODE_BATTERY, wiim.getBatteryLevel());
+				info.put(Constant.NODE_CLASSIC, (wiim.isNumchuk()?"0":"1"));
+				info.put(Constant.NODE_NUNCHUK, (wiim.isNumchuk()?"1":"0"));
+				map.put(i, info);
 			}
 		}
 		if(map.size() == 0){

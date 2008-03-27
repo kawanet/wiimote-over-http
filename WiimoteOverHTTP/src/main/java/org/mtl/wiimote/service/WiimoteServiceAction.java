@@ -23,7 +23,7 @@ import org.mtl.wiimote.exception.WiimoteNotFoundException;
 /**
  * WiimoteOverHTTPサーブレットクラス
  * @author nemoto.hrs
- * @version 0.2
+ * @version 2008/03/27
  */
 public class WiimoteServiceAction extends HttpServlet{
 	/** Default Serial Version */
@@ -31,11 +31,17 @@ public class WiimoteServiceAction extends HttpServlet{
 	
 	/** Wiiリモコン管理クラス*/
 	private static WiimoteManager manager = null;
+	/** XML Serializer */
+	private static XMLSerializer serializer = new XMLSerializer();
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{
 		// XMLステータス初期化
 		Integer returnStatus = Constant.STATUS_OK;
+		// XML Serializer初期化
+		serializer.setRootName(Constant.NODE_RESPONSE);
+		serializer.setTypeHintsEnabled(false);
+
 		
 		// Wiiリモコン管理クラスを初期化
 		if(manager == null){
@@ -78,6 +84,8 @@ public class WiimoteServiceAction extends HttpServlet{
 					this.isPressed(jResponse, wiimote, button);
 				}else if(method.equals(Constant.SET_LED)){
 					this.setLED(jResponse, wiimote, light, time);
+				}else if(method.equals(Constant.GET_INFO)){
+					this.getInfo(jResponse, wiimote);
 				}else{
 					// status ノード追加
 					returnStatus = Constant.STATUS_METHOD_NOT_FOUND;
@@ -196,7 +204,7 @@ public class WiimoteServiceAction extends HttpServlet{
 	}
 
 	/**
-	 * Wiiリモコン情報取得
+	 * Wiiリモコン操作情報取得
 	 * @param rNode 基点ノード
 	 * @param wiimote WiiリモコンNo.
 	 */
@@ -223,28 +231,42 @@ public class WiimoteServiceAction extends HttpServlet{
 		if(allInfo != null){
 			// data ノード追加
 			JSONArray wiimArr = new JSONArray();
+			// XML Serializer にリストタグ名追加
+			serializer.setElementName(Constant.NODE_WIIMOTE);
 			Iterator itr = allInfo.keySet().iterator();
 			while(itr.hasNext()){
 				Integer idx = (Integer)itr.next();
 				Map info = (Map)allInfo.get(idx);
 				JSONObject wiimVal = new JSONObject();
+				JSONObject nchkVal = new JSONObject();
 				wiimVal.put("@"+Constant.ATTR_INDEX, idx.toString());
-				wiimVal.put(Constant.NODE_X_POS, 		info.get(Wiimote.POS_X).toString());
-				wiimVal.put(Constant.NODE_Y_POS, 		info.get(Wiimote.POS_Y).toString());
-				wiimVal.put(Constant.NODE_Z_POS, 		info.get(Wiimote.POS_Z).toString());
-				wiimVal.put(Constant.NODE_PITCH, 		info.get(Wiimote.POS_PITCH).toString());
-				wiimVal.put(Constant.NODE_ROLL,  		info.get(Wiimote.POS_ROLL).toString());
-				wiimVal.put(Constant.NODE_BTN_A, 		(Boolean)info.get(Wiimote.KEY_A)?"1":"0");
-				wiimVal.put(Constant.NODE_BTN_B, 		(Boolean)info.get(Wiimote.KEY_B)?"1":"0");
+				wiimVal.put(Constant.NODE_X_POS, 	info.get(Wiimote.POS_X).toString());
+				wiimVal.put(Constant.NODE_Y_POS, 	info.get(Wiimote.POS_Y).toString());
+				wiimVal.put(Constant.NODE_Z_POS, 	info.get(Wiimote.POS_Z).toString());
+				wiimVal.put(Constant.NODE_PITCH, 	info.get(Wiimote.POS_PITCH).toString());
+				wiimVal.put(Constant.NODE_ROLL,  	info.get(Wiimote.POS_ROLL).toString());
+				wiimVal.put(Constant.NODE_BTN_A, 	(Boolean)info.get(Wiimote.KEY_A)?"1":"0");
+				wiimVal.put(Constant.NODE_BTN_B, 	(Boolean)info.get(Wiimote.KEY_B)?"1":"0");
 				wiimVal.put(Constant.NODE_BTN_ONE, 	(Boolean)info.get(Wiimote.KEY_ONE)?"1":"0");
 				wiimVal.put(Constant.NODE_BTN_TWO, 	(Boolean)info.get(Wiimote.KEY_TWO)?"1":"0");
-				wiimVal.put(Constant.NODE_BTN_MINUS, 	(Boolean)info.get(Wiimote.KEY_MINUS)?"1":"0");
-				wiimVal.put(Constant.NODE_BTN_PLUS, 	(Boolean)info.get(Wiimote.KEY_PLUS)?"1":"0");
-				wiimVal.put(Constant.NODE_BTN_HOME, 	(Boolean)info.get(Wiimote.KEY_HOME)?"1":"0");
-				wiimVal.put(Constant.NODE_BTN_UP, 		(Boolean)info.get(Wiimote.KEY_UP)?"1":"0");
-				wiimVal.put(Constant.NODE_BTN_DOWN, 	(Boolean)info.get(Wiimote.KEY_DOWN)?"1":"0");
-				wiimVal.put(Constant.NODE_BTN_LEFT, 	(Boolean)info.get(Wiimote.KEY_LEFT)?"1":"0");
-				wiimVal.put(Constant.NODE_BTN_RIGHT, 	(Boolean)info.get(Wiimote.KEY_RIGHT)?"1":"0");
+				wiimVal.put(Constant.NODE_BTN_MINUS,(Boolean)info.get(Wiimote.KEY_MINUS)?"1":"0");
+				wiimVal.put(Constant.NODE_BTN_PLUS, (Boolean)info.get(Wiimote.KEY_PLUS)?"1":"0");
+				wiimVal.put(Constant.NODE_BTN_HOME, (Boolean)info.get(Wiimote.KEY_HOME)?"1":"0");
+				wiimVal.put(Constant.NODE_BTN_UP, 	(Boolean)info.get(Wiimote.KEY_UP)?"1":"0");
+				wiimVal.put(Constant.NODE_BTN_DOWN, (Boolean)info.get(Wiimote.KEY_DOWN)?"1":"0");
+				wiimVal.put(Constant.NODE_BTN_LEFT, (Boolean)info.get(Wiimote.KEY_LEFT)?"1":"0");
+				wiimVal.put(Constant.NODE_BTN_RIGHT,(Boolean)info.get(Wiimote.KEY_RIGHT)?"1":"0");
+				// ヌンチャク情報
+				nchkVal.put(Constant.NODE_X_POS, info.get(Wiimote.NPOS_X).toString());
+				nchkVal.put(Constant.NODE_Y_POS, info.get(Wiimote.NPOS_Y).toString());
+				nchkVal.put(Constant.NODE_Z_POS, info.get(Wiimote.NPOS_Z).toString());
+				nchkVal.put(Constant.NODE_PITCH, info.get(Wiimote.NPOS_PITCH).toString());
+				nchkVal.put(Constant.NODE_ROLL,  info.get(Wiimote.NPOS_ROLL).toString());
+				nchkVal.put(Constant.NODE_BTN_C, (Boolean)info.get(Wiimote.KEY_C)?"1":"0");
+				nchkVal.put(Constant.NODE_BTN_Z, (Boolean)info.get(Wiimote.KEY_Z)?"1":"0");
+				nchkVal.put(Constant.NODE_X_VEC, info.get(Wiimote.ALG_X).toString());
+				nchkVal.put(Constant.NODE_Y_VEC, info.get(Wiimote.ALG_Y).toString());
+				wiimVal.put(Constant.NODE_NUNCHUK, nchkVal);
 				wiimArr.add(wiimVal);
 			}
 			rNode.put(Constant.NODE_DATA, wiimArr);
@@ -288,8 +310,10 @@ public class WiimoteServiceAction extends HttpServlet{
 		Integer st = 0;
 		boolean bol = false;
 		try{
-			if(wiimote != null && GenericValidator.isInt(wiimote) && 
-					button != null && button.matches("HOME|MINUS|PLUS|A|B|ONE|TWO|UP|DOWN|LEFT|RIGHT")){
+			String paramVal = Constant.HOME+"|"+Constant.MINUS+"|"+Constant.PLUS+"|"+Constant.A+"|"+Constant.B+"|"+Constant.ONE+"|"+
+					Constant.TWO+"|"+Constant.UP+"|"+Constant.DOWN+"|"+Constant.LEFT+"|"+Constant.RIGHT+"|"+Constant.C+"|"+Constant.Z;
+		if(wiimote != null && GenericValidator.isInt(wiimote) && 
+					button != null && button.matches(paramVal)){
 				bol = manager.isPressed(Integer.parseInt(wiimote), button);
 				st = Constant.STATUS_OK;
 			}else{
@@ -341,6 +365,51 @@ public class WiimoteServiceAction extends HttpServlet{
 		// status ノード追加
 		rNode.put(Constant.NODE_STATUS, st.toString());
 	}
+
+	/**
+	 * Wiiリモコン情報取得
+	 * @param rNode 基点ノード
+	 * @param wiimote WiiリモコンNo.
+	 */
+	private void getInfo(JSONObject rNode, String wiimote){
+		Integer st = 0;
+		Map allInfo = null;
+		try {
+			if(wiimote != null && GenericValidator.isInt(wiimote)){
+				allInfo = manager.getInfo(Integer.parseInt(wiimote));
+			}else{
+				allInfo = manager.getAllInfo();
+			}
+			st = Constant.STATUS_OK;
+
+		}catch(WiimoteNotFoundException e){
+			st = Constant.STATUS_WIIMOTE_NOT_FOUND;
+		}catch(WiimoteNotConnectException e){
+			st = Constant.STATUS_WIIMOTE_NOT_FOUND;
+		}catch(Exception e){
+			st = Constant.STATUS_NG;
+		}
+		// status ノード追加
+		rNode.put(Constant.NODE_STATUS, st.toString());
+		if(allInfo != null){
+			// data ノード追加
+			JSONArray wiimArr = new JSONArray();
+			// XML Serializer にリストタグ名追加
+			serializer.setElementName(Constant.NODE_INFO);
+			Iterator itr = allInfo.keySet().iterator();
+			while(itr.hasNext()){
+				Integer idx = (Integer)itr.next();
+				Map info = (Map)allInfo.get(idx);
+				JSONObject infoVal = new JSONObject();
+				infoVal.put("@"+Constant.ATTR_WIIMOTE, idx.toString());
+				infoVal.put(Constant.NODE_BATTERY, 	info.get(Constant.NODE_BATTERY));
+				infoVal.put(Constant.NODE_CLASSIC, 	info.get(Constant.NODE_CLASSIC));
+				infoVal.put(Constant.NODE_NUNCHUK, 	info.get(Constant.NODE_NUNCHUK));
+				wiimArr.add(infoVal);
+			}
+			rNode.put(Constant.NODE_DATA, wiimArr);
+		}
+	}
 	
 	/**
 	 * 出力を行う
@@ -354,11 +423,6 @@ public class WiimoteServiceAction extends HttpServlet{
 			response.setCharacterEncoding(Constant.UTF8);
 			writer = response.getWriter();
 
-			XMLSerializer serializer = new XMLSerializer();
-			serializer.setRootName(Constant.NODE_RESPONSE);
-			serializer.setElementName(Constant.NODE_WIIMOTE);
-			serializer.setTypeHintsEnabled(false);
-
 			// XML
 			if(type == null || type.equals(Constant.RESPONSE_XML)){
 				response.setContentType(Constant.HD_RESPONSE_XML);
@@ -367,7 +431,7 @@ public class WiimoteServiceAction extends HttpServlet{
 			}else if(type.equals(Constant.RESPONSE_JSON)){
 				JSONObject robj = new JSONObject();
 				robj.put(Constant.NODE_RESPONSE, jobj);
-				String json = robj.toString().replace("[", "{\"wiimote\":[").replace("]", "]}");
+				String json = robj.toString().replace("[", "{\""+serializer.getElementName()+"\":[").replace("]", "]}");
 				// callbackパラメタが指定された場合はJSONPで返す
 				if(callback != null && !callback.equals("")){
 					response.setContentType(Constant.HD_RESPONSE_JSONP);

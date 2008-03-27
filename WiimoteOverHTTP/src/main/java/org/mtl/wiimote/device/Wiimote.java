@@ -1,6 +1,7 @@
 package org.mtl.wiimote.device;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
@@ -8,6 +9,7 @@ import java.util.TimerTask;
 
 import org.mtl.wiimote.exception.WiimoteNotConnectException;
 
+import wiiremotej.AnalogStickData;
 import wiiremotej.WiiRemote;
 import wiiremotej.WiiRemoteExtension;
 import wiiremotej.WiiRemoteJ;
@@ -16,13 +18,14 @@ import wiiremotej.event.WRButtonEvent;
 import wiiremotej.event.WRCombinedEvent;
 import wiiremotej.event.WRExtensionEvent;
 import wiiremotej.event.WRIREvent;
+import wiiremotej.event.WRNunchukExtensionEvent;
 import wiiremotej.event.WRStatusEvent;
-import wiiremotej.event.WiiRemoteListener;
+import wiiremotej.event.WiiRemoteAdapter;
 
 /**
  * Wiiリモコンクラス
  * @author nemoto.hrs
- * @version 0.1
+ * @version 2008/03/27
  */
 public class Wiimote{
 	/** Wiiリモート */
@@ -31,10 +34,15 @@ public class Wiimote{
 	private int wiimoteNo = -1;
 	/** デフォルトLED点灯パターン */
 	private boolean[] defaultLEDPattern = null;
+	/** バッテリー残量(%) */
+	private double batteryLevel = 0.0;
 	/** ボタン押下状態保持MAP */
 	private HashMap<Integer, Boolean> buttonMap = new HashMap<Integer, Boolean>();
 	/** 位置情報保持MAP */
 	private HashMap<Integer, Double> positionMap = new HashMap<Integer, Double>();
+	/** アナログスティック情報保持MAP */
+	private HashMap<Integer, Double> analogStickMap = new HashMap<Integer, Double>();
+
 	/** デフォルトLED点灯パターンリスト */
 	private static final boolean[][] LED_PATTERN = {
 		{true,	true,	true,	true},
@@ -62,14 +70,29 @@ public class Wiimote{
 	public static final int KEY_DOWN 		= WRButtonEvent.DOWN;
 	public static final int KEY_LEFT 		= WRButtonEvent.LEFT;
 	public static final int KEY_RIGHT 	= WRButtonEvent.RIGHT;
-	
+
 	/* Wiiリモコン位置 */
 	public static final int POS_X 		= 100;
 	public static final int POS_Y 		= 110;
 	public static final int POS_Z 		= 120;
 	public static final int POS_PITCH		= 130;
 	public static final int POS_ROLL		= 140;
-		
+
+	/* ヌンチャクKEY */
+	public static final int KEY_C 		= WRNunchukExtensionEvent.C;
+	public static final int KEY_Z 		= WRNunchukExtensionEvent.Z;
+	
+	/* ヌンチャク位置 */
+	public static final int NPOS_X 		= 200;
+	public static final int NPOS_Y 		= 210;
+	public static final int NPOS_Z 		= 220;
+	public static final int NPOS_PITCH	= 230;
+	public static final int NPOS_ROLL		= 240;
+	
+	/* ヌンチャクアナログスティック */
+	public static final int ALG_X 		= 250;
+	public static final int ALG_Y 		= 260;
+
 	/**
 	 * コンストラクタ
 	 */
@@ -107,12 +130,22 @@ public class Wiimote{
 		buttonMap.put(KEY_DOWN,  false);
 		buttonMap.put(KEY_LEFT,  false);
 		buttonMap.put(KEY_RIGHT, false);
+		buttonMap.put(KEY_C,  	 false);
+		buttonMap.put(KEY_Z, 	 false);
 		// 位置情報
 		positionMap.put(POS_X, 		0.0);
 		positionMap.put(POS_Y, 		0.0);
 		positionMap.put(POS_Z, 		0.0);
 		positionMap.put(POS_PITCH, 	0.0);
 		positionMap.put(POS_ROLL, 	0.0);
+		positionMap.put(NPOS_X, 	0.0);
+		positionMap.put(NPOS_Y, 	0.0);
+		positionMap.put(NPOS_Z, 	0.0);
+		positionMap.put(NPOS_PITCH,	0.0);
+		positionMap.put(NPOS_ROLL, 	0.0);
+		// アナログスティック情報
+		analogStickMap.put(ALG_X, 0.0);
+		analogStickMap.put(ALG_Y, 0.0);
 	}
 	
 	/**
@@ -130,8 +163,9 @@ public class Wiimote{
 			if(wiiremote != null && wiiremote.isConnected()){
 				System.out.println("=== CONNECT === wiimoteNo:"+this.wiimoteNo);
 				// イベントのリスナを設定
-				wiiremote.addWiiRemoteListener(new WiimoteListener());
+				wiiremote.addWiiRemoteListener(new WiimoteAdapter());
 				wiiremote.setAccelerometerEnabled(true);
+				wiiremote.setIRSensorEnabled(false, WRIREvent.FULL);
 				// LEDを点灯させる
 				wiiremote.setLEDLights(this.defaultLEDPattern);
 				return true;
@@ -279,8 +313,42 @@ public class Wiimote{
 		if(wiiremote != null && wiiremote.isConnected()){
 			Map posInfo = (Map)positionMap.clone();
 			Map btnInfo = (Map)buttonMap.clone();
+			Map algInfo = (Map)analogStickMap.clone();
 			posInfo.putAll(btnInfo);
+			posInfo.putAll(algInfo);
 			return posInfo;
+		}else{
+			throw new WiimoteNotConnectException();
+		}		
+	}
+	
+	/**
+	 * Wiiリモコンのバッテリー残量を返す
+	 * @return バッテリー残量(%)
+	 * @throws WiimoteNotConnectException Wiiリモコンが未接続
+	 */
+	public double getBatteryLevel() throws WiimoteNotConnectException{
+		if(wiiremote != null && wiiremote.isConnected()){
+			try{
+				wiiremote.requestStatus();
+				Thread.sleep(200);
+			}catch(Exception e){
+				e.printStackTrace();
+			};
+			return this.batteryLevel;
+		}else{
+			throw new WiimoteNotConnectException();
+		}
+	}
+	
+	/**
+	 * ヌンチャクが繋がっているか否かを返す
+	 * @return ヌンチャクが繋がっている場合はtrue
+	 * @throws WiimoteNotConnectException Wiiリモコンが未接続
+	 */
+	public boolean isNumchuk() throws WiimoteNotConnectException{
+		if(wiiremote != null && wiiremote.isConnected()){
+			return wiiremote.isExtensionConnected();
 		}else{
 			throw new WiimoteNotConnectException();
 		}		
@@ -334,21 +402,43 @@ public class Wiimote{
 	}
 
 	/**
-	 * Wiiリモコンイベントリスナ
+	 * Wiiリモコンアダプタ
 	 * @author nemoto.hrs
-	 * @version 0.1
+	 * @version 0.3
 	 */
-	private class WiimoteListener implements WiiRemoteListener{
+	private class WiimoteAdapter extends WiiRemoteAdapter{
+
+		DecimalFormat df = new DecimalFormat("###.######");
+		/* Wiiリモコン座標 */
+		Double pX = null;
+		Double pY = null;
+		Double pZ = null;
+		Double pPc = null;
+		Double pRl = null;
+		
+		/* ヌンチャク座標 */
+		Double npX = null;
+		Double npY = null;
+		Double npZ = null;
+		Double npPc = null;
+		Double npRl = null;
 		
 		public void accelerationInputReceived(WRAccelerationEvent arg0) {
-			positionMap.put(POS_X, 		arg0.getXAcceleration());
-			positionMap.put(POS_Y, 		arg0.getYAcceleration());
-			positionMap.put(POS_Z, 		arg0.getZAcceleration());
-			positionMap.put(POS_PITCH, 	arg0.getPitch());
-			positionMap.put(POS_ROLL, 	arg0.getRoll());
+			// 位置情報
+			pX = arg0.getXAcceleration();
+			pY = arg0.getYAcceleration();
+			pZ = arg0.getZAcceleration();
+			pPc = arg0.getPitch();
+			pRl = arg0.getRoll();
+			positionMap.put(POS_X, 		pX.isNaN()?pX:new Double(df.format(pX)));
+			positionMap.put(POS_Y, 		pY.isNaN()?pY:new Double(df.format(pY)));
+			positionMap.put(POS_Z, 		pZ.isNaN()?pZ:new Double(df.format(pZ)));
+			positionMap.put(POS_PITCH, 	pPc.isNaN()?pPc:new Double(df.format(pPc)));
+			positionMap.put(POS_ROLL, 	pRl.isNaN()?pRl:new Double(df.format(pRl)));
 		}
 
 		public void buttonInputReceived(WRButtonEvent arg0) {
+			// ボタン情報
 			if(arg0.wasPressed(WRButtonEvent.A))		buttonMap.put(KEY_A, 	 true);
 			if(arg0.wasPressed(WRButtonEvent.B))		buttonMap.put(KEY_B, 	 true);
 			if(arg0.wasPressed(WRButtonEvent.ONE))		buttonMap.put(KEY_ONE, 	 true);
@@ -388,15 +478,61 @@ public class Wiimote{
 		}
 
 		public void extensionConnected(WiiRemoteExtension arg0) {
-			// TODO 自動生成されたメソッド・スタブ
+			try{
+				wiiremote.setExtensionEnabled(true);
+			}catch(Exception e){
+				e.printStackTrace();
+			}
 		}
 
 		public void extensionDisconnected(WiiRemoteExtension arg0) {
-			// TODO 自動生成されたメソッド・スタブ
+			try{
+				wiiremote.setExtensionEnabled(false);
+				// 全ての情報を初期化
+				buttonMap.put(KEY_C, false);
+				buttonMap.put(KEY_Z, false);
+				positionMap.put(NPOS_X, 	0.0);
+				positionMap.put(NPOS_Y, 	0.0);
+				positionMap.put(NPOS_Z, 	0.0);
+				positionMap.put(NPOS_PITCH,	0.0);
+				positionMap.put(NPOS_ROLL, 	0.0);
+				analogStickMap.put(ALG_X, 0.0);
+				analogStickMap.put(ALG_Y, 0.0);
+			}catch(Exception e){
+				e.printStackTrace();
+			}
 		}
 
 		public void extensionInputReceived(WRExtensionEvent arg0) {
-			// TODO 自動生成されたメソッド・スタブ
+			// ヌンチャク
+			if(arg0 instanceof WRNunchukExtensionEvent){
+	            WRNunchukExtensionEvent evt = (WRNunchukExtensionEvent)arg0;
+                WRAccelerationEvent aEvt = evt.getAcceleration();
+                AnalogStickData aData = evt.getAnalogStickData();
+                
+                // 位置情報
+    			npX = aEvt.getXAcceleration();
+    			npY = aEvt.getYAcceleration();
+    			npZ = aEvt.getZAcceleration();
+    			npPc = aEvt.getPitch();
+    			npRl = aEvt.getRoll();
+    			positionMap.put(NPOS_X, 	npX.isNaN()?npX:new Double(df.format(npX)));
+    			positionMap.put(NPOS_Y, 	npY.isNaN()?npY:new Double(df.format(npY)));
+    			positionMap.put(NPOS_Z, 	npZ.isNaN()?npZ:new Double(df.format(npZ)));
+    			positionMap.put(NPOS_PITCH, npPc.isNaN()?npPc:new Double(df.format(npPc)));
+    			positionMap.put(NPOS_ROLL, 	npRl.isNaN()?npRl:new Double(df.format(npRl)));
+                
+    			// ボタン情報
+				if(evt.wasPressed(WRNunchukExtensionEvent.C))	buttonMap.put(KEY_C, true);
+				if(evt.wasPressed(WRNunchukExtensionEvent.Z))	buttonMap.put(KEY_Z, true);
+	            
+				if(evt.wasReleased(WRNunchukExtensionEvent.C))	buttonMap.put(KEY_C, false);
+				if(evt.wasReleased(WRNunchukExtensionEvent.Z))	buttonMap.put(KEY_Z, false);
+				
+				// アナログスティック情報
+				analogStickMap.put(ALG_X, new Double(df.format(aData.getX())));
+				analogStickMap.put(ALG_Y, new Double(df.format(aData.getY())));
+			}
 		}
 
 		public void extensionPartiallyInserted() {
@@ -408,7 +544,7 @@ public class Wiimote{
 		}
 
 		public void statusReported(WRStatusEvent arg0) {
-			// TODO 自動生成されたメソッド・スタブ	
+			batteryLevel = arg0.getBatteryLevel()*100.0;
 		}
 
 	}

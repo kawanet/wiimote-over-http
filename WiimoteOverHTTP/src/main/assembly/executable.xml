@@ -5,7 +5,6 @@
 		<format>zip</format>
 	</formats>
 	<fileSets>
-<!--
 		<fileSet>
 			<directory>target</directory>
 			<outputDirectory>/</outputDirectory>
@@ -13,12 +12,24 @@
 				<include>*.war</include>
 			</includes>
 		</fileSet>
--->
 		<fileSet>
 			<directory>src/main/lib</directory>
 			<outputDirectory>/</outputDirectory>
 			<includes>
-				<include>*.jar</include>
+				<include>JettyServer-1.0.jar</include>
+			</includes>
+		</fileSet>
+		<fileSet>
+			<directory>src/main/lib</directory>
+			<outputDirectory>lib/</outputDirectory>
+			<includes>
+				<include>ant-1.6.5.jar</include>
+				<include>jdtcore-3.1.0.jar</include>
+				<include>jetty-6.1.8.jar</include>
+				<include>jetty-util-6.1.8.jar</include>
+				<include>jsp-2.1-6.0.1.jar</include>
+				<include>jsp-api-2.1-6.0.2.jar</include>
+				<include>servlet-api-2.5-6.1.8.jar</include>
 			</includes>
 		</fileSet>
 		<fileSet>
@@ -29,11 +40,4 @@
 			</includes>
 		</fileSet>
 	</fileSets>
-	<dependencySets>
-		<dependencySet>
-			<unpack>false</unpack>
-			<scope>runtime</scope>
-			<outputDirectory>lib/</outputDirectory>
-		</dependencySet>
-	</dependencySets>
 </assembly>

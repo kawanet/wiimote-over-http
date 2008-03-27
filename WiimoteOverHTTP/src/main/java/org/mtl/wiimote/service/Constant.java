@@ -1,5 +1,10 @@
 package org.mtl.wiimote.service;
 
+/**
+ * 定数
+ * @author nemoto
+ * @version 2008/03/27
+ */
 public class Constant {
 
 	/** パラメータKEY */
@@ -24,6 +29,22 @@ public class Constant {
 	public static final String SET_VIBRATE 		= "setVibrate";
 	public static final String SET_LED		 	= "setLED";
 	public static final String GET_STATUS		 	= "getStatus";
+	public static final String GET_INFO		 	= "getInfo";
+
+	/** パラメータ（button）VALUE */
+	public static final String ONE 	= "ONE";
+	public static final String TWO	= "TWO";
+	public static final String A 		= "A";
+	public static final String B 		= "B";
+	public static final String MINUS	= "MINUS";
+	public static final String PLUS 	= "PLUS";
+	public static final String HOME 	= "HOME";
+	public static final String UP 	= "UP";
+	public static final String DOWN 	= "DOWN";
+	public static final String LEFT 	= "LEFT";
+	public static final String RIGHT	= "RIGHT";
+	public static final String C 		= "C";
+	public static final String Z 		= "Z";
 
 	/** XMLステータス */
 	public static final Integer STATUS_OK 				= 200;
@@ -55,8 +76,17 @@ public class Constant {
 	public static final String NODE_BTN_DOWN 			= "down";
 	public static final String NODE_BTN_LEFT 			= "left";
 	public static final String NODE_BTN_RIGHT			= "right";
+	public static final String NODE_BTN_C 			= "c";
+	public static final String NODE_BTN_Z 			= "z";
+	public static final String NODE_X_VEC 			= "xVec";
+	public static final String NODE_Y_VEC 			= "yVec";
 	public static final String NODE_WIIMOTE 			= "wiimote";
 	public static final String ATTR_INDEX 			= "index";
+	public static final String ATTR_WIIMOTE 			= "wiimote";
+	public static final String NODE_INFO 				= "info";
+	public static final String NODE_CLASSIC 			= "classic";
+	public static final String NODE_NUNCHUK 			= "nunchuk";
+	public static final String NODE_BATTERY 			= "battery";
 
 	/** レスポンスタイプ */
 	public static final String RESPONSE_XML 		= "xml";
@@ -71,8 +101,5 @@ public class Constant {
 	/** エンコード */
 	public static final String UTF8 		= "UTF8";
 	public static final String SJIS 		= "Shift_JIS";
-	public static final String EUC_JP 	= "EUC-JP";
-	
-	
-	
+	public static final String EUC_JP 	= "EUC-JP";	
 }

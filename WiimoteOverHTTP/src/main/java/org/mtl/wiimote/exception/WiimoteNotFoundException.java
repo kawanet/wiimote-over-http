@@ -3,7 +3,7 @@ package org.mtl.wiimote.exception;
 /**
  * WiiƒŠƒ‚ƒRƒ“‚ªŒ©‚Â‚©‚ç‚È‚¢ê‡‚Éthrow‚³‚ê‚éException
  * @author nemoto.hrs
- * @version 0.1
+ * @version 2008/03/27
  */
 public class WiimoteNotFoundException extends Exception {
 	/** Default Serial Version */

@@ -13,7 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * WiimoteOverHTTPサーブレットクラス
  * @author nemoto.hrs
- * @version 0.2
+ * @version 2008/03/27
  */
 public class WiimoteTestPageViewAction extends HttpServlet{
 	/** Default Serial Version */
