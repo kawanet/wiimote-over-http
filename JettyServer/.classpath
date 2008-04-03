@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry path="src/main/java" kind="src"/>
+	<classpathentry path="src/main/config" kind="src"/>
+	<classpathentry path="src/main/assembly" kind="src"/>
+	<classpathentry path="org.eclipse.jdt.launching.JRE_CONTAINER" kind="con"/>
+	<classpathentry path="jetty-6.1.8.jar" kind="lib"/>
+	<classpathentry path="jetty-util-6.1.8.jar" kind="lib"/>
+	<classpathentry path="servlet-api-2.5-6.1.8.jar" kind="lib"/>
+	<classpathentry path="bin" kind="output"/>
+</classpath>
