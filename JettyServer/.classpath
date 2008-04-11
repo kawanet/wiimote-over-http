@@ -3,6 +3,14 @@
 	<classpathentry path="src/main/java" kind="src"/>
 	<classpathentry path="src/main/config" kind="src"/>
 	<classpathentry path="src/main/assembly" kind="src"/>
+	<classpathentry path="src/main/resources" kind="src"/>
 	<classpathentry path="org.eclipse.jdt.launching.JRE_CONTAINER" kind="con"/>
+	<classpathentry path="M2_REPO/jetty/jsp/2.1-6.0.1/jsp-2.1-6.0.1.jar" kind="var"/>
+	<classpathentry path="M2_REPO/jetty/jsp-api/2.1-6.0.2/jsp-api-2.1-6.0.2.jar" kind="var"/>
+	<classpathentry path="M2_REPO/org/mortbay/jetty/jetty/6.1.8/jetty-6.1.8.jar" kind="var"/>
+	<classpathentry path="M2_REPO/org/mortbay/jetty/jetty-util/6.1.8/jetty-util-6.1.8.jar" kind="var"/>
+	<classpathentry path="M2_REPO/org/mortbay/jetty/servlet-api-2.5/6.1.8/servlet-api-2.5-6.1.8.jar" kind="var"/>
+	<classpathentry path="M2_REPO/ant/ant/1.6.5/ant-1.6.5.jar" kind="var"/>
+	<classpathentry path="M2_REPO/eclipse/jdtcore/3.1.0/jdtcore-3.1.0.jar" kind="var"/>
 	<classpathentry path="bin" kind="output"/>
 </classpath>

@@ -15,21 +15,25 @@ public class JettyServer{
 	    BoundedThreadPool threadPool = new BoundedThreadPool();
 		SelectChannelConnector connector = new SelectChannelConnector();
 
-		connector.setPort(8080);
-        threadPool.setMaxThreads(100);
-        server.setThreadPool(threadPool);
-		server.setConnectors(new Connector[] {connector});
-
-		Properties prop = new Properties();
-		
 		try {
+			Properties prop = new Properties();
 			prop.load(new FileInputStream("server.properties"));
-			String war  = prop.getProperty("target.war");
+			String port = prop.getProperty("server.port");
 			String ctxt = prop.getProperty("target.contextpath");
-			
+			String war  = prop.getProperty("target.war");
+	
+			connector.setPort(Integer.parseInt(port));
+	        threadPool.setMaxThreads(100);
+	        server.setThreadPool(threadPool);
+			server.setConnectors(new Connector[] {connector});
+
+		
+//			WebAppContext web = new WebAppContext(".", ctxt);
+						
 			WebAppContext web = new WebAppContext();
 			web.setWar(war);
 			web.setContextPath("/"+ctxt);
+			
 			server.addHandler(web);
 
 			server.start();
