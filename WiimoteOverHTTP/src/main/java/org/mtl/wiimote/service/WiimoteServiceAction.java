@@ -10,15 +10,14 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-import net.sf.json.xml.XMLSerializer;
 
 import org.apache.commons.validator.GenericValidator;
 import org.mtl.wiimote.device.Wiimote;
 import org.mtl.wiimote.device.WiimoteManager;
 import org.mtl.wiimote.exception.WiimoteNotConnectException;
 import org.mtl.wiimote.exception.WiimoteNotFoundException;
+import org.mtl.wiimote.json.JSON;
+import org.mtl.wiimote.json.JSONArray;
 
 /**
  * WiimoteOverHTTPサーブレットクラス
@@ -31,17 +30,11 @@ public class WiimoteServiceAction extends HttpServlet{
 	
 	/** Wiiリモコン管理クラス*/
 	private static WiimoteManager manager = null;
-	/** XML Serializer */
-	private static XMLSerializer serializer = new XMLSerializer();
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{
 		// XMLステータス初期化
 		Integer returnStatus = Constant.STATUS_OK;
-		// XML Serializer初期化
-		serializer.setRootName(Constant.NODE_RESPONSE);
-		serializer.setTypeHintsEnabled(false);
-
 		
 		// Wiiリモコン管理クラスを初期化
 		if(manager == null){
@@ -57,10 +50,10 @@ public class WiimoteServiceAction extends HttpServlet{
 		String resType 	= request.getParameter(Constant.RESPONSE_TYPE);
 		String callback = request.getParameter(Constant.CALLBACK);
 
-		JSONObject jResponse = null;
+		JSON jResponse = null;
 		try {
 			// response データ作成
-			jResponse = new JSONObject();
+			jResponse = new JSON();
 			// method ノード作成
 			jResponse.put(Constant.NODE_METHOD, method);
 			// status ノード作成
@@ -102,8 +95,11 @@ public class WiimoteServiceAction extends HttpServlet{
 			jResponse.put(Constant.NODE_STATUS, returnStatus.toString());
 			e.printStackTrace();
 		}finally{
-			// 結果を出力
-			this.writeResponse(response, resType, jResponse, callback);
+			// Response ノード
+			JSON json = new JSON();
+			json.put(Constant.NODE_RESPONSE, jResponse);
+			// 結果を出力			
+			this.writeResponse(response, resType, json, callback);
 		}
 	}
 	
@@ -111,7 +107,7 @@ public class WiimoteServiceAction extends HttpServlet{
 	 * Wiiリモコン探索・接続
 	 * @param rNode XML基点ノード
 	 */
-	private void findWiimote(JSONObject rNode){
+	private void findWiimote(JSON rNode){
 		Integer st = 0;
 		try{
 			manager.findWiimote();
@@ -127,7 +123,7 @@ public class WiimoteServiceAction extends HttpServlet{
 	 * Wiiリモコン切断
 	 * @param rNode XML基点ノード
 	 */
-	private void releaseWiimote(JSONObject rNode, String wiimote){
+	private void releaseWiimote(JSON rNode, String wiimote){
 		Integer st = 0;
 		try{
 			if(wiimote != null && GenericValidator.isInt(wiimote)){
@@ -148,7 +144,7 @@ public class WiimoteServiceAction extends HttpServlet{
 	 * @param rNode XML基点ノード
 	 * @param wiimote WiiリモコンNo.
 	 */
-	private void isConnected(JSONObject rNode, String wiimote){
+	private void isConnected(JSON rNode, String wiimote){
 		Integer st = 0;
 		boolean bol = false;
 		try{
@@ -174,7 +170,7 @@ public class WiimoteServiceAction extends HttpServlet{
 	 * @param rNode XML基点ノード
 	 * @param wiimote WiiリモコンNo.
 	 */
-	private void getPositionInfo(JSONObject rNode, String wiimote){
+	private void getPositionInfo(JSON rNode, String wiimote){
 		Integer st = 0;
 		Map<Integer, Double> posInfo = null;
 		try {
@@ -194,7 +190,7 @@ public class WiimoteServiceAction extends HttpServlet{
 		// status ノード追加
 		rNode.put(Constant.NODE_STATUS, st.toString());
 		// data ノード追加
-		JSONObject data = new JSONObject();
+		JSON data = new JSON();
 		data.put(Constant.NODE_X_POS, posInfo.get(Wiimote.POS_X).toString());
 		data.put(Constant.NODE_Y_POS, posInfo.get(Wiimote.POS_Y).toString());
 		data.put(Constant.NODE_Z_POS, posInfo.get(Wiimote.POS_Z).toString());
@@ -208,7 +204,7 @@ public class WiimoteServiceAction extends HttpServlet{
 	 * @param rNode 基点ノード
 	 * @param wiimote WiiリモコンNo.
 	 */
-	private void getStatus(JSONObject rNode, String wiimote){
+	private void getStatus(JSON rNode, String wiimote){
 		Integer st = 0;
 		Map allInfo = null;
 		try {
@@ -231,14 +227,14 @@ public class WiimoteServiceAction extends HttpServlet{
 		if(allInfo != null){
 			// data ノード追加
 			JSONArray wiimArr = new JSONArray();
-			// XML Serializer にリストタグ名追加
-			serializer.setElementName(Constant.NODE_WIIMOTE);
+			// wiimote ノード追加
+			JSON wiim = new JSON();
 			Iterator itr = allInfo.keySet().iterator();
 			while(itr.hasNext()){
 				Integer idx = (Integer)itr.next();
 				Map info = (Map)allInfo.get(idx);
-				JSONObject wiimVal = new JSONObject();
-				JSONObject nchkVal = new JSONObject();
+				JSON wiimVal = new JSON();
+				JSON nchkVal = new JSON();
 				wiimVal.put("@"+Constant.ATTR_INDEX, idx.toString());
 				wiimVal.put(Constant.NODE_X_POS, 	info.get(Wiimote.POS_X).toString());
 				wiimVal.put(Constant.NODE_Y_POS, 	info.get(Wiimote.POS_Y).toString());
@@ -269,7 +265,8 @@ public class WiimoteServiceAction extends HttpServlet{
 				wiimVal.put(Constant.NODE_NUNCHUK, nchkVal);
 				wiimArr.add(wiimVal);
 			}
-			rNode.put(Constant.NODE_DATA, wiimArr);
+			wiim.put(Constant.NODE_WIIMOTE, wiimArr);
+			rNode.put(Constant.NODE_DATA, wiim);
 		}
 	}
 	
@@ -279,7 +276,7 @@ public class WiimoteServiceAction extends HttpServlet{
 	 * @param wiimote WiiリモコンNo.
 	 * @param time バイブレーション時間
 	 */
-	private void setVibrate(JSONObject rNode, String wiimote, String time){
+	private void setVibrate(JSON rNode, String wiimote, String time){
 		Integer st = 0;
 		try {
 			if(wiimote != null && GenericValidator.isInt(wiimote) && 
@@ -306,7 +303,7 @@ public class WiimoteServiceAction extends HttpServlet{
 	 * @param button ボタン名
 	 * @return ステータス
 	 */
-	private void isPressed(JSONObject rNode, String wiimote, String button){
+	private void isPressed(JSON rNode, String wiimote, String button){
 		Integer st = 0;
 		boolean bol = false;
 		try{
@@ -329,7 +326,7 @@ public class WiimoteServiceAction extends HttpServlet{
 		// status ノード追加
 		rNode.put(Constant.NODE_STATUS, st.toString());
 		// data ノード追加
-		JSONObject data = new JSONObject();
+		JSON data = new JSON();
 		data.put(Constant.NODE_BOOL, (bol?"1":"0"));
 		rNode.put(Constant.NODE_DATA, data);
 	}
@@ -340,7 +337,7 @@ public class WiimoteServiceAction extends HttpServlet{
 	 * @param light LED点灯パターン
 	 * @return ステータス
 	 */
-	private void setLED(JSONObject rNode, String wiimote, String light, String time){
+	private void setLED(JSON rNode, String wiimote, String light, String time){
 		Integer st = 0;
 		try{
 			if(wiimote != null && GenericValidator.isInt(wiimote) && 
@@ -371,7 +368,7 @@ public class WiimoteServiceAction extends HttpServlet{
 	 * @param rNode 基点ノード
 	 * @param wiimote WiiリモコンNo.
 	 */
-	private void getInfo(JSONObject rNode, String wiimote){
+	private void getInfo(JSON rNode, String wiimote){
 		Integer st = 0;
 		Map allInfo = null;
 		try {
@@ -394,20 +391,21 @@ public class WiimoteServiceAction extends HttpServlet{
 		if(allInfo != null){
 			// data ノード追加
 			JSONArray wiimArr = new JSONArray();
-			// XML Serializer にリストタグ名追加
-			serializer.setElementName(Constant.NODE_INFO);
+			// info ノード追加
+			JSON infoNode = new JSON();
 			Iterator itr = allInfo.keySet().iterator();
 			while(itr.hasNext()){
 				Integer idx = (Integer)itr.next();
 				Map info = (Map)allInfo.get(idx);
-				JSONObject infoVal = new JSONObject();
+				JSON infoVal = new JSON();
 				infoVal.put("@"+Constant.ATTR_WIIMOTE, idx.toString());
 				infoVal.put(Constant.NODE_BATTERY, 	info.get(Constant.NODE_BATTERY));
 				infoVal.put(Constant.NODE_CLASSIC, 	info.get(Constant.NODE_CLASSIC));
 				infoVal.put(Constant.NODE_NUNCHUK, 	info.get(Constant.NODE_NUNCHUK));
 				wiimArr.add(infoVal);
 			}
-			rNode.put(Constant.NODE_DATA, wiimArr);
+			infoNode.put(Constant.NODE_INFO, wiimArr);
+			rNode.put(Constant.NODE_DATA, infoNode);
 		}
 	}
 	
@@ -416,7 +414,7 @@ public class WiimoteServiceAction extends HttpServlet{
 	 * @param writer 
 	 * @param type
 	 */
-	private void writeResponse(HttpServletResponse response, String type, JSONObject jobj, String callback){
+	private void writeResponse(HttpServletResponse response, String type, JSON jobj, String callback){
 		PrintWriter writer = null;
 		try{
 			// レスポンスのライターを取得
@@ -426,19 +424,16 @@ public class WiimoteServiceAction extends HttpServlet{
 			// XML
 			if(type == null || type.equals(Constant.RESPONSE_XML)){
 				response.setContentType(Constant.HD_RESPONSE_XML);
-				writer.write(serializer.write(jobj));
+				writer.write(jobj.toXMLString());
 			// JSON・JSONP
 			}else if(type.equals(Constant.RESPONSE_JSON)){
-				JSONObject robj = new JSONObject();
-				robj.put(Constant.NODE_RESPONSE, jobj);
-				String json = robj.toString().replace("[", "{\""+serializer.getElementName()+"\":[").replace("]", "]}");
 				// callbackパラメタが指定された場合はJSONPで返す
 				if(callback != null && !callback.equals("")){
 					response.setContentType(Constant.HD_RESPONSE_JSONP);
-					writer.write(callback+"("+json+");");
+					writer.write(callback+"("+jobj.toJSONString()+");");
 				}else{
 					response.setContentType(Constant.HD_RESPONSE_JSON);
-					writer.write(json);
+					writer.write(jobj.toJSONString());
 				}
 			}else{
 				writer.write("illigal responseType");

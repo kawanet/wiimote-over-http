@@ -1,0 +1,7 @@
+==============================================================
+ JettyServer 
+==============================================================
+
+This application includes software developed at The Apache Software Foundation
+(http://www.apache.org/) and Mort Bay Consulting Pty Ltd(http://www.mortbay.com/).
+
